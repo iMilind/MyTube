@@ -307,6 +307,8 @@ public class LoginActivity
     @Override
     public void didGenerateAccessToken(String accessToken) {
 
+        Intent intent = new Intent(this, LandingActivity.class);
+        startActivity(intent);
     }
 
     @Override
