@@ -26,6 +26,12 @@ public class AccessTokenUtil extends AsyncTask {
         public Activity getActivity();
     }
 
+
+    private final static String YOUTUBE_API_SCOPE
+            = "https://www.googleapis.com/auth/youtube";
+    private final static String mScopes
+            = "oauth2:" + YOUTUBE_API_SCOPE;
+
     String mScope;
     String mEmail;
 
@@ -36,12 +42,8 @@ public class AccessTokenUtil extends AsyncTask {
         delegate = (GoogleConnectionUtilProtocol) activity;
     }
 
-    private final static String YOUTUBE_API_SCOPE
-            = "https://www.googleapis.com/auth/youtube";
-    private final static String mScopes
-            = "oauth2:" + YOUTUBE_API_SCOPE;
-
     private String fetchToken() throws IOException {
+
         try {
 
             return GoogleAuthUtil.getToken(delegate.getActivity(), mEmail, mScopes);
