@@ -1,53 +1,61 @@
 package com.example.milindmahajan.mytube;
 
 
+import android.accounts.AccountManager;
+import android.app.Activity;
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 
-import android.Manifest;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
-import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AppCompatActivity;
-import android.view.View;
-import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.auth.UserRecoverableAuthException;
+import com.google.android.gms.common.AccountPicker;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.Scopes;
-import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.plus.Plus;
-import com.google.android.gms.plus.model.people.Person;
+
+import com.example.milindmahajan.connectionutil.AccessTokenUtil;
 
 public class LoginActivity
         extends AppCompatActivity
         implements
-        View.OnClickListener,
         ActivityCompat.OnRequestPermissionsResultCallback,
         GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener {
-
+        GoogleApiClient.OnConnectionFailedListener,
+        AccessTokenUtil.GoogleConnectionUtilProtocol {
 
     private static final int RC_SIGN_IN = 1;
     private static final int RC_PERM_GET_ACCOUNTS = 2;
     private static final String KEY_IS_RESOLVING = "is_resolving";
     private static final String KEY_SHOULD_RESOLVE = "should_resolve";
+
     private GoogleApiClient mGoogleApiClient;
+
     private boolean mIsResolving = false;
     private boolean mShouldResolve = false;
+
+    static final int REQUEST_CODE_RECOVER_FROM_PLAY_SERVICES_ERROR = 1001;
+
+    String SCOPE = "oauth2:https://www.googleapis.com/auth/userinfo.profile";
+
+
+    /*******************************************************************************************************************
+     ****************************************   Activity Lifecycle  ****************************************************
+     *******************************************************************************************************************/
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,8 +69,6 @@ public class LoginActivity
             mShouldResolve = savedInstanceState.getBoolean(KEY_SHOULD_RESOLVE);
         }
 
-        findViewById(R.id.sign_in_button).setOnClickListener(this);
-
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
@@ -73,32 +79,16 @@ public class LoginActivity
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-
-        System.out.println("onOptionsItemSelected");
-        int id = item.getItemId();
-
-        if (id == R.id.action_settings) {
-
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
-    @Override
     protected void onStart() {
 
-        System.out.println("onStart");
         super.onStart();
-        mGoogleApiClient.connect();
     }
 
     @Override
     protected void onStop() {
 
-        System.out.println("onStop");
         super.onStop();
+
         mGoogleApiClient.disconnect();
     }
 
@@ -106,33 +96,137 @@ public class LoginActivity
     protected void onSaveInstanceState(Bundle outState) {
 
         super.onSaveInstanceState(outState);
+
         outState.putBoolean(KEY_IS_RESOLVING, mIsResolving);
         outState.putBoolean(KEY_SHOULD_RESOLVE, mShouldResolve);
     }
 
     @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
-        super.onActivityResult(requestCode, resultCode, data);
-        System.out.println("onActivityResult");
+        if (requestCode == REQUEST_CODE_PICK_ACCOUNT) {
+
+            if (resultCode == RESULT_OK) {
+
+                String mEmail = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
+                getUsername(mEmail);
+            } else if (resultCode == RESULT_CANCELED) {
+
+                Toast.makeText(this, "Select an account to proceed", Toast.LENGTH_SHORT).show();
+            }
+        } else if (requestCode == REQUEST_CODE_RECOVER_FROM_PLAY_SERVICES_ERROR
+                && resultCode == RESULT_OK) {
+
+            String mEmail = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
+            getUsername(mEmail);
+        }
 
         if (requestCode == RC_SIGN_IN) {
 
             if (resultCode != RESULT_OK) {
 
                 mShouldResolve = false;
+            } else if (resultCode == RESULT_CANCELED) {
+
+                Toast.makeText(this, "You must pick an account to signin", Toast.LENGTH_SHORT).show();
             }
 
             mIsResolving = false;
         }
     }
 
+
+    /*******************************************************************************************************************
+     ****************************************   Helper Methods  ********************************************************
+     *******************************************************************************************************************/
+
+    private void getUsername(String mEmail) {
+
+        if (mEmail == null) {
+
+            pickUserAccount();
+        } else {
+
+            if (isDeviceOnline()) {
+
+                new AccessTokenUtil(this, mEmail, SCOPE).execute();;
+            } else {
+
+                Toast.makeText(this, "No internet connection", Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+    public boolean isDeviceOnline() {
+
+        ConnectivityManager connMgr = (ConnectivityManager)
+                getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+
+        if (networkInfo != null && networkInfo.isConnected()) {
+
+            return true;
+        }
+
+        return false;
+    }
+
+    public void handleException(final Exception e) {
+
+        runOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+
+                if (e instanceof UserRecoverableAuthException) {
+
+                    Intent intent = ((UserRecoverableAuthException)e).getIntent();
+                    startActivityForResult(intent,
+                            REQUEST_CODE_RECOVER_FROM_PLAY_SERVICES_ERROR);
+                }
+            }
+        });
+    }
+
+    private void showErrorDialog(ConnectionResult connectionResult) {
+
+        GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
+        int resultCode = apiAvailability.isGooglePlayServicesAvailable(this);
+
+        if (resultCode != ConnectionResult.SUCCESS) {
+
+            if (apiAvailability.isUserResolvableError(resultCode)) {
+
+                apiAvailability.getErrorDialog(this, resultCode, RC_SIGN_IN,
+                        new DialogInterface.OnCancelListener() {
+
+                            @Override
+                            public void onCancel(DialogInterface dialog) {
+
+                                mShouldResolve = false;
+                            }
+                        }).show();
+            }
+            else {
+
+                String errorString = apiAvailability.getErrorString(resultCode);
+                Toast.makeText(this, errorString, Toast.LENGTH_SHORT).show();
+
+                mShouldResolve = false;
+            }
+        }
+    }
+
+
+    /*******************************************************************************************************************
+     ****************************************   Google API callbacks  **************************************************
+     *******************************************************************************************************************/
+
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            @NonNull String permissions[],
                                            @NonNull int[] grantResults) {
 
-        System.out.println("onRequestPermissionsResult");
         if (requestCode == RC_PERM_GET_ACCOUNTS) {
 
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -144,14 +238,12 @@ public class LoginActivity
     @Override
     public void onConnected(Bundle bundle) {
 
-        System.out.println("onConnected");
         mShouldResolve = false;
     }
 
     @Override
     public void onConnectionSuspended(int i) {
 
-        System.out.println("onConnectionSuspended");
     }
 
     @Override
@@ -178,43 +270,50 @@ public class LoginActivity
         }
     }
 
-    private void showErrorDialog(ConnectionResult connectionResult) {
 
-        GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
-        int resultCode = apiAvailability.isGooglePlayServicesAvailable(this);
+    /*******************************************************************************************************************
+     *******************************************   User events  ********************************************************
+     *******************************************************************************************************************/
 
-        if (resultCode != ConnectionResult.SUCCESS) {
+    public void didTouchSignInButton(View v) {
 
-            if (apiAvailability.isUserResolvableError(resultCode)) {
-
-                apiAvailability.getErrorDialog(this, resultCode, RC_SIGN_IN,
-                        new DialogInterface.OnCancelListener() {
-                            @Override
-                            public void onCancel(DialogInterface dialog) {
-                                mShouldResolve = false;
-                            }
-                        }).show();
-            }
-            else {
-
-                String errorString = apiAvailability.getErrorString(resultCode);
-                Toast.makeText(this, errorString, Toast.LENGTH_SHORT).show();
-
-                mShouldResolve = false;
-            }
-        }
-    }
-
-    @Override
-    public void onClick(View v) {
-
-        System.out.println("sign in button clicked");
         onSignInClicked();
     }
 
     private void onSignInClicked() {
 
         mShouldResolve = true;
-        mGoogleApiClient.connect();
+        pickUserAccount();
+    }
+
+    static final int REQUEST_CODE_PICK_ACCOUNT = 1000;
+
+    private void pickUserAccount() {
+        String[] accountTypes = new String[]{"com.google"};
+        Intent intent = AccountPicker.newChooseAccountIntent(null, null,
+                accountTypes, false, null, null, null, null);
+        startActivityForResult(intent, REQUEST_CODE_PICK_ACCOUNT);
+    }
+
+
+    /*******************************************************************************************************************
+     ****************************************   AccessTokenUtil callback  **********************************************
+     *******************************************************************************************************************/
+
+    @Override
+    public void didGenerateAccessToken(String accessToken) {
+
+    }
+
+    @Override
+    public void didCatchException(Exception exc) {
+
+        handleException(exc);
+    }
+
+    @Override
+    public Activity getActivity() {
+
+        return (Activity)this;
     }
 }
