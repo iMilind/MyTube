@@ -31,13 +31,17 @@ import com.google.android.gms.plus.Plus;
 import com.example.milindmahajan.connectionutil.AccessTokenUtil;
 
 public class LoginActivity
-        extends AppCompatActivity
+
+        extends
+        AppCompatActivity
+
         implements
         ActivityCompat.OnRequestPermissionsResultCallback,
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
         AccessTokenUtil.GoogleConnectionUtilProtocol {
 
+    
     private static final int RC_SIGN_IN = 1;
     private static final int RC_PERM_GET_ACCOUNTS = 2;
     private static final String KEY_IS_RESOLVING = "is_resolving";
