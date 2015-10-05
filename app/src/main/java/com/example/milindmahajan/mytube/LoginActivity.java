@@ -29,6 +29,7 @@ import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.plus.Plus;
 
 import com.example.milindmahajan.connectionutil.AccessTokenUtil;
+import com.example.milindmahajan.mytube.HomeActivity;
 
 public class LoginActivity
 
@@ -307,7 +308,7 @@ public class LoginActivity
     @Override
     public void didGenerateAccessToken(String accessToken) {
 
-        Intent intent = new Intent(this, LandingActivity.class);
+        Intent intent = new Intent(this, HomeActivity.class);
         startActivity(intent);
     }
 
