@@ -1,16 +1,17 @@
 package com.example.milindmahajan.mytube;
 
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.support.v4.view.PagerAdapter;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v4.view.ViewPager;
 import android.view.View;
 import android.view.ViewGroup;
 
+import java.util.ArrayList;
+
 
 public class HomeActivity extends AppCompatActivity {
-
-    private String[] tabs = { "Search", "My Favorites" };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,10 +29,24 @@ public class HomeActivity extends AppCompatActivity {
 
     public class TabsPagerAdapter extends PagerAdapter {
 
+        private String[] tabs = { "Search", "My Favorites" };
+        ArrayList <Fragment> fragmentArrayList;
+
+        public TabsPagerAdapter () {
+
+            fragmentArrayList = new ArrayList<Fragment>();
+
+            Fragment searchFragment = new SearchFragment();
+            fragmentArrayList.add(searchFragment);
+
+            Fragment favoriteFragment = new FavoriteFragment();
+            fragmentArrayList.add(favoriteFragment);
+        }
+
         @Override
         public int getCount() {
 
-            return 2;
+            return fragmentArrayList.size();
         }
 
         @Override
@@ -49,8 +64,17 @@ public class HomeActivity extends AppCompatActivity {
         @Override
         public Object instantiateItem(ViewGroup container, int position) {
 
-            View view = getLayoutInflater().inflate(R.layout.activity_home,
-                    container, false);
+            View view;
+            if (position == 0) {
+
+                view = getLayoutInflater().inflate(R.layout.fragment_search,
+                        container, false);
+            }
+            else {
+
+                view = getLayoutInflater().inflate(R.layout.fragment_favorite,
+                        container, false);
+            }
 
             container.addView(view);
 
