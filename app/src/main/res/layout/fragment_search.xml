@@ -1,23 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-
-<RelativeLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background = "@drawable/background"
     >
 
     <EditText
-        android:id="@+id/search_edit_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:hint="Enter text to search"
+        android:id="@+id/search_input"
+        android:singleLine="true"
         />
 
     <ListView
-        android:id="@+id/search_result_list_view"
+        android:id="@+id/videos_found"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
+        android:dividerHeight="5dp"
         />
 
-</RelativeLayout>
+</LinearLayout>
