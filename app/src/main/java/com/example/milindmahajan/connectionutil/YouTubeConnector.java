@@ -12,7 +12,9 @@ import com.google.api.services.youtube.model.SearchListResponse;
 import com.google.api.services.youtube.model.SearchResult;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -41,7 +43,7 @@ public class YouTubeConnector {
             query = youtube.search().list("id,snippet");
             query.setKey(KEY);
             query.setType("video");
-            query.setFields("items(id/videoId,snippet/title,snippet/description,snippet/thumbnails/default/url)");
+            query.setFields("items(id/videoId,snippet/title,snippet/publishedAt,snippet/thumbnails/default/url)");
         }catch(IOException e){
 
             e.printStackTrace();
@@ -61,8 +63,9 @@ public class YouTubeConnector {
             for(SearchResult result:results) {
 
                 File item = new File();
+
                 item.setTitle(result.getSnippet().getTitle());
-                item.setDescription(result.getSnippet().getDescription());
+                item.setPublishedDate(convertDate(result.getSnippet().getPublishedAt().toString()));
                 item.setThumbnailURL(result.getSnippet().getThumbnails().getDefault().getUrl());
                 item.setId(result.getId().getVideoId());
                 items.add(item);
@@ -73,6 +76,25 @@ public class YouTubeConnector {
 
             System.out.println("Exception while search in YouTubeConnector "+e.getLocalizedMessage());
             e.printStackTrace();
+            return null;
+        }
+    }
+
+    public String convertDate(String fromDate) {
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        Date convertedDate = null;
+
+        try {
+
+            convertedDate = sdf.parse(fromDate);
+            SimpleDateFormat formatter = new SimpleDateFormat("MMM dd, yyyy");
+            String convertedDateString = formatter.format(convertedDate);
+
+            return convertedDateString;
+        } catch(Exception ex){
+
+            ex.printStackTrace();
             return null;
         }
     }

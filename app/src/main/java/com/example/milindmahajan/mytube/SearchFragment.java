@@ -159,13 +159,13 @@ public class SearchFragment extends Fragment {
 
                 ImageView thumbnail = (ImageView)convertView.findViewById(R.id.video_thumbnail);
                 TextView title = (TextView)convertView.findViewById(R.id.video_title);
-                TextView description = (TextView)convertView.findViewById(R.id.video_description);
+                TextView publishedDate = (TextView)convertView.findViewById(R.id.publishedDate);
 
                 File searchResult = searchResults.get(position);
 
                 Picasso.with(getActivity().getApplicationContext()).load(searchResult.getThumbnailURL()).into(thumbnail);
                 title.setText(searchResult.getTitle());
-                description.setText(searchResult.getDescription());
+                publishedDate.setText(searchResult.getPublishedDate());
 
                 return convertView;
             }

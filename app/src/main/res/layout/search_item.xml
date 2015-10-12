@@ -25,10 +25,18 @@
         android:textStyle="bold"
         />
 
-    <TextView android:id="@+id/video_description"
+    <TextView android:id="@+id/publishedDate"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_toRightOf="@+id/video_thumbnail"
+        android:layout_below="@+id/video_title"
+        android:textSize="15sp"
+        />
+
+    <TextView android:id="@+id/numberOfViews"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@+id/publishedDate"
         android:layout_below="@+id/video_title"
         android:textSize="15sp"
         />

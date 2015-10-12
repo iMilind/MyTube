@@ -5,10 +5,11 @@ package com.example.milindmahajan.model;
  */
 public class File {
 
-    private String title;
-    private String description;
-    private String thumbnailURL;
     private String id;
+    private String title;
+    private String numberOfViews;
+    private String publishedDate;
+    private String thumbnailURL;
 
     public String getId() {
         return id;
@@ -18,20 +19,28 @@ public class File {
         this.id = id;
     }
 
+    public String getNumberOfViews() {
+        return numberOfViews;
+    }
+
+    public void setNumberOfViews(String numberOfViews) {
+        this.numberOfViews = numberOfViews;
+    }
+
+    public String getPublishedDate() {
+        return publishedDate;
+    }
+
+    public void setPublishedDate(String publishedDate) {
+        this.publishedDate = publishedDate;
+    }
+
     public String getTitle() {
         return title;
     }
 
     public void setTitle(String title) {
         this.title = title;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 
     public String getThumbnailURL() {
