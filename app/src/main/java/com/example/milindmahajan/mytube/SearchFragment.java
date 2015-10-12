@@ -24,6 +24,8 @@ import com.example.milindmahajan.connectionutil.YouTubeConnector;
 import com.example.milindmahajan.model.File;
 import com.squareup.picasso.Picasso;
 
+import org.w3c.dom.Text;
+
 import java.util.List;
 
 /**
@@ -160,12 +162,14 @@ public class SearchFragment extends Fragment {
                 ImageView thumbnail = (ImageView)convertView.findViewById(R.id.video_thumbnail);
                 TextView title = (TextView)convertView.findViewById(R.id.video_title);
                 TextView publishedDate = (TextView)convertView.findViewById(R.id.publishedDate);
+                TextView numberOfViews = (TextView)convertView.findViewById(R.id.numberOfViews);
 
                 File searchResult = searchResults.get(position);
 
                 Picasso.with(getActivity().getApplicationContext()).load(searchResult.getThumbnailURL()).into(thumbnail);
                 title.setText(searchResult.getTitle());
                 publishedDate.setText(searchResult.getPublishedDate());
+                numberOfViews.setText(searchResult.getNumberOfViews());
 
                 return convertView;
             }

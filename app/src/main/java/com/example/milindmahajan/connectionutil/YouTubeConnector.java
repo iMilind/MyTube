@@ -10,6 +10,8 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.SearchListResponse;
 import com.google.api.services.youtube.model.SearchResult;
+import com.google.api.services.youtube.model.Video;
+import com.google.api.services.youtube.model.VideoListResponse;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -68,6 +70,17 @@ public class YouTubeConnector {
                 item.setPublishedDate(convertDate(result.getSnippet().getPublishedAt().toString()));
                 item.setThumbnailURL(result.getSnippet().getThumbnails().getDefault().getUrl());
                 item.setId(result.getId().getVideoId());
+
+                YouTube.Videos.List listVideosRequest = youtube.videos().list("snippet, recordingDetails").setId(result.getId().getVideoId());
+                VideoListResponse listResponse = listVideosRequest.execute();
+
+                List<Video> videoList = listResponse.getItems();
+
+                if (videoList != null) {
+
+                    item.setNumberOfViews(videoList.get(0).getStatistics().getViewCount().toString());
+                }
+
                 items.add(item);
             }
 
