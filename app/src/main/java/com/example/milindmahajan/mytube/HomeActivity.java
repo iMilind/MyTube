@@ -1,7 +1,13 @@
 package com.example.milindmahajan.mytube;
 
+import android.content.ActivityNotFoundException;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.view.PagerAdapter;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v4.view.ViewPager;
@@ -11,7 +17,9 @@ import android.view.ViewGroup;
 import java.util.ArrayList;
 
 
-public class HomeActivity extends AppCompatActivity {
+public class HomeActivity
+        extends AppCompatActivity
+    implements SearchFragment.SearchFragmentListener {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -20,71 +28,65 @@ public class HomeActivity extends AppCompatActivity {
         setContentView(R.layout.activity_home);
 
         ViewPager viewPager = (ViewPager) findViewById(R.id.viewpager);
-        viewPager.setAdapter(new TabsPagerAdapter());
+        viewPager.setAdapter(new TabsPagerAdapter(getSupportFragmentManager()));
 
         SlidingTabLayout slidingTabLayout = (SlidingTabLayout) findViewById(R.id.sliding_tabs);
         slidingTabLayout.setViewPager(viewPager);
     }
 
 
-    public class TabsPagerAdapter extends PagerAdapter {
+    private class TabsPagerAdapter extends FragmentPagerAdapter {
 
         private String[] tabs = { "Search", "My Favorites" };
-        ArrayList <Fragment> fragmentArrayList;
 
-        public TabsPagerAdapter () {
+        public TabsPagerAdapter(FragmentManager fm) {
 
-            fragmentArrayList = new ArrayList<Fragment>();
+            super(fm);
+        }
 
-            Fragment searchFragment = new SearchFragment();
-            fragmentArrayList.add(searchFragment);
+        @Override
+        public Fragment getItem(int i) {
 
-            Fragment favoriteFragment = new FavoriteFragment();
-            fragmentArrayList.add(favoriteFragment);
+            if (i == 0) {
+
+                return new SearchFragment();
+            }
+            else {
+
+                return new FavoriteFragment();
+            }
         }
 
         @Override
         public int getCount() {
 
-            return fragmentArrayList.size();
-        }
-
-        @Override
-        public boolean isViewFromObject(View view, Object o) {
-
-            return o == view;
+            return 2;
         }
 
         @Override
         public CharSequence getPageTitle(int position) {
 
-            return tabs[position].toString();
+            return tabs[position];
         }
+    }
 
-        @Override
-        public Object instantiateItem(ViewGroup container, int position) {
 
-            View view;
-            if (position == 0) {
+    @Override
+    public void didSelectVideo(String videoId) {
 
-                view = getLayoutInflater().inflate(R.layout.fragment_search,
-                        container, false);
-            }
-            else {
+        try {
 
-                view = getLayoutInflater().inflate(R.layout.fragment_favorite,
-                        container, false);
-            }
+            System.out.println("Selected video Id "+videoId);
 
-            container.addView(view);
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("vnd.youtube:" + videoId));
+            intent.putExtra("VIDEO_ID", videoId);
+            intent.putExtra("force_fullscreen",true);
+            startActivity(intent);
+        } catch (ActivityNotFoundException ex){
 
-            return view;
-        }
-
-        @Override
-        public void destroyItem(ViewGroup container, int position, Object object) {
-
-            container.removeView((View) object);
+            Intent intent=new Intent(Intent.ACTION_VIEW,
+                    Uri.parse("http://www.youtube.com/watch?v="+videoId));
+            startActivity(intent);
         }
     }
 }
