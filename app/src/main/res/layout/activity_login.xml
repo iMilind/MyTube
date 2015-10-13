@@ -25,8 +25,8 @@
         android:background="@android:color/holo_blue_dark" />
 
     <ImageView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="570dp"
+        android:layout_height="346dp"
         android:id="@+id/imageView"
         android:layout_above="@+id/sign_in_button"
         android:background="@drawable/google"

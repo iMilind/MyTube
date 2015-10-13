@@ -1,9 +1,7 @@
 package com.example.milindmahajan.mytube;
 
-import android.content.ActivityNotFoundException;
 import android.content.Context;
-import android.content.Intent;
-import android.net.Uri;
+import android.graphics.Color;
 import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -15,8 +13,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -24,8 +24,7 @@ import com.example.milindmahajan.connectionutil.YouTubeConnector;
 import com.example.milindmahajan.model.File;
 import com.squareup.picasso.Picasso;
 
-import org.w3c.dom.Text;
-
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -37,14 +36,14 @@ public class SearchFragment extends Fragment {
 
     public interface  SearchFragmentListener {
 
-        public void didSelectVideo(String videoId);
+        public void didSelectVideo(String videoId, ArrayList<File> result);
     }
 
 
     View rootView;
     private Handler handler;
     private ListView videosFound;
-    private List<File> searchResults;
+    private ArrayList<File> searchResults;
 
 
     @Override
@@ -117,7 +116,7 @@ public class SearchFragment extends Fragment {
 
                 String videoId = searchResults.get(pos).getId();
 
-                searchFragmentListener.didSelectVideo(videoId);
+                searchFragmentListener.didSelectVideo(videoId, searchResults);
             }
 
         });
@@ -129,7 +128,7 @@ public class SearchFragment extends Fragment {
 
             public void run() {
 
-                YouTubeConnector yc = new YouTubeConnector(rootView.getContext());
+                YouTubeConnector yc = new YouTubeConnector();
                 searchResults = yc.search(keywords);
 
                 if (searchResults.size() != 0) {
@@ -138,7 +137,7 @@ public class SearchFragment extends Fragment {
 
                         public void run() {
 
-                            updateVideosFound();
+                            updateVideosFound(searchResults);
                         }
                     });
                 }
@@ -146,10 +145,18 @@ public class SearchFragment extends Fragment {
         }.start();
     }
 
+    public void reloadListView (List <File> savedState) {
 
-    private void updateVideosFound() {
+        if (savedState.size() != 0) {
 
-        ArrayAdapter<File> adapter = new ArrayAdapter<File>(getActivity().getApplicationContext(), R.layout.search_item, searchResults) {
+            updateVideosFound(savedState);
+        }
+    }
+
+
+    private void updateVideosFound(List <File> videoList) {
+
+        ArrayAdapter<File> adapter = new ArrayAdapter<File>(getActivity().getApplicationContext(), R.layout.search_item, videoList) {
 
             @Override
             public View getView(int position, View convertView, ViewGroup parent) {
@@ -159,12 +166,31 @@ public class SearchFragment extends Fragment {
                     convertView = getActivity().getLayoutInflater().inflate(R.layout.search_item, parent, false);
                 }
 
+                File searchResult = searchResults.get(position);
+
+                if (position % 2 == 0) {
+
+                    convertView.setBackgroundColor(Color.WHITE);
+                } else {
+
+                    convertView.setBackgroundColor(Color.LTGRAY);
+                }
+
                 ImageView thumbnail = (ImageView)convertView.findViewById(R.id.video_thumbnail);
                 TextView title = (TextView)convertView.findViewById(R.id.video_title);
                 TextView publishedDate = (TextView)convertView.findViewById(R.id.publishedDate);
                 TextView numberOfViews = (TextView)convertView.findViewById(R.id.numberOfViews);
+                Button starButton = (Button)convertView.findViewById(R.id.star);
+                starButton.setTag(searchResult.getId());
 
-                File searchResult = searchResults.get(position);
+                starButton.setOnClickListener(new View.OnClickListener() {
+
+                    @Override
+                    public void onClick(View v) {
+
+
+                    }
+                });
 
                 Picasso.with(getActivity().getApplicationContext()).load(searchResult.getThumbnailURL()).into(thumbnail);
                 title.setText(searchResult.getTitle());

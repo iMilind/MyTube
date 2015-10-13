@@ -3,6 +3,8 @@ package com.example.milindmahajan.connectionutil;
 import android.content.Context;
 
 import com.example.milindmahajan.model.File;
+import com.google.android.gms.auth.api.Auth;
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.http.javanet.NetHttpTransport;
@@ -12,6 +14,7 @@ import com.google.api.services.youtube.model.SearchListResponse;
 import com.google.api.services.youtube.model.SearchResult;
 import com.google.api.services.youtube.model.Video;
 import com.google.api.services.youtube.model.VideoListResponse;
+import com.google.api.client.util.Joiner;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -25,11 +28,12 @@ import java.util.List;
 public class YouTubeConnector {
 
     public static final String KEY = "AIzaSyBEvnr-6nEtGMoVS-_MoK78Ne7iC1FPBr0";
+    private static final long NUMBER_OF_VIDEOS_RETURNED = 25;
 
     private YouTube youtube;
     private YouTube.Search.List query;
 
-    public YouTubeConnector(Context context) {
+    public YouTubeConnector() {
 
         youtube = new YouTube.Builder(new NetHttpTransport(),
                 new JacksonFactory(), new HttpRequestInitializer() {
@@ -45,14 +49,15 @@ public class YouTubeConnector {
             query = youtube.search().list("id,snippet");
             query.setKey(KEY);
             query.setType("video");
-            query.setFields("items(id/videoId,snippet/title,snippet/publishedAt,snippet/thumbnails/default/url)");
+            query.setFields("items(id/videoId)");
+            query.setMaxResults(NUMBER_OF_VIDEOS_RETURNED);
         }catch(IOException e){
 
             e.printStackTrace();
         }
     }
 
-    public List<File> search(String keywords) {
+    public ArrayList<File> search(String keywords) {
 
         query.setQ(keywords);
 
@@ -61,24 +66,33 @@ public class YouTubeConnector {
             SearchListResponse response = query.execute();
             List<SearchResult> results = response.getItems();
 
-            List<File> items = new ArrayList<File>();
+            ArrayList<File> items = new ArrayList<File>();
+
             for(SearchResult result:results) {
 
                 File item = new File();
 
-                item.setTitle(result.getSnippet().getTitle());
-                item.setPublishedDate(convertDate(result.getSnippet().getPublishedAt().toString()));
-                item.setThumbnailURL(result.getSnippet().getThumbnails().getDefault().getUrl());
-                item.setId(result.getId().getVideoId());
+                try {
 
-                YouTube.Videos.List listVideosRequest = youtube.videos().list("snippet, recordingDetails").setId(result.getId().getVideoId());
-                VideoListResponse listResponse = listVideosRequest.execute();
+                    List<String> videoIds = new ArrayList<String>();
+                    videoIds.add(result.getId().getVideoId());
+                    Joiner stringJoiner = Joiner.on(',');
+                    String videoId = stringJoiner.join(videoIds);
 
-                List<Video> videoList = listResponse.getItems();
+                    YouTube.Videos.List listVideosRequest = youtube.videos().list("snippet, statistics").setId(videoId);
+                    listVideosRequest.setKey(KEY);
+                    VideoListResponse listResponse = listVideosRequest.execute();
 
-                if (videoList != null) {
+                    item.setTitle(listResponse.getItems().get(0).getSnippet().getTitle());
+                    item.setPublishedDate(convertDate(listResponse.getItems().get(0).getSnippet().getPublishedAt().toString()));
+                    item.setThumbnailURL(listResponse.getItems().get(0).getSnippet().getThumbnails().getDefault().getUrl());
+                    item.setId(result.getId().getVideoId());
+                    item.setNumberOfViews(listResponse.getItems().get(0).getStatistics().getViewCount().toString());
+                } catch (Exception exc) {
 
-                    item.setNumberOfViews(videoList.get(0).getStatistics().getViewCount().toString());
+                    item.setTitle("Exception case");
+                    item.setPublishedDate("Exception date");
+                    item.setNumberOfViews("Exception count");
                 }
 
                 items.add(item);
