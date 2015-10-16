@@ -146,7 +146,7 @@ public class FavoriteFragment extends Fragment {
                 Button starButton = (Button)convertView.findViewById(R.id.star);
                 starButton.setTag(searchResult.getId());
 
-                starButton.setBackgroundResource(R.drawable.star_filled);
+                starButton.setBackgroundResource(android.R.drawable.star_on);
 
                 starButton.setOnClickListener(new View.OnClickListener() {
 

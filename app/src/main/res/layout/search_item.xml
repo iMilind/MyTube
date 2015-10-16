@@ -70,7 +70,6 @@
 
     <Button
         android:id="@+id/star"
-        android:background="@drawable/star_empty"
         android:layout_width="64dp"
         android:layout_height="64dp"
         android:focusable="false"
@@ -79,11 +78,5 @@
         android:layout_below="@+id/video_title"
         android:layout_alignParentRight="true"
         />
-
-    <!--<Button-->
-        <!--android:id="@+id/playVideoButton"-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="match_parent"-->
-        <!--/>-->
 
 </RelativeLayout>

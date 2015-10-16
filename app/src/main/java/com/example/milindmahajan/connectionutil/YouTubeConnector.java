@@ -1,38 +1,34 @@
 package com.example.milindmahajan.connectionutil;
 
 import android.os.AsyncTask;
+import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
 import com.example.milindmahajan.application_settings.ApplicationSettings;
 import com.example.milindmahajan.model.Auth;
 import com.example.milindmahajan.model.File;
 import com.google.api.client.auth.oauth2.Credential;
-import com.google.api.client.googleapis.extensions.android.gms.auth.GooglePlayServicesAvailabilityIOException;
-import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException;
 import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.util.Lists;
 import com.google.api.services.youtube.YouTube;
-import com.google.api.services.youtube.model.ChannelListResponse;
-import com.google.api.services.youtube.model.Playlist;
 import com.google.api.services.youtube.model.PlaylistItem;
 import com.google.api.services.youtube.model.PlaylistItemListResponse;
 import com.google.api.services.youtube.model.PlaylistItemSnippet;
-import com.google.api.services.youtube.model.PlaylistListResponse;
 import com.google.api.services.youtube.model.ResourceId;
 import com.google.api.services.youtube.model.SearchListResponse;
 import com.google.api.services.youtube.model.SearchResult;
-import com.google.api.services.youtube.model.Video;
-import com.google.api.services.youtube.model.VideoListResponse;
 import com.google.api.client.util.Joiner;
+import com.google.api.services.youtube.model.VideoListResponse;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Stack;
+
 
 /**
  * Created by milind.mahajan on 10/10/15.

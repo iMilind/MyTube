@@ -185,10 +185,10 @@ public class SearchFragment extends Fragment {
 
                 if (searchResult.isFavorite()) {
 
-                    starButton.setBackgroundResource(R.drawable.star_filled);
+                    starButton.setBackgroundResource(android.R.drawable.star_on);
                 } else {
 
-                    starButton.setBackgroundResource(R.drawable.star_empty);
+                    starButton.setBackgroundResource(android.R.drawable.star_off);
                 }
 
                 starButton.setOnClickListener(new View.OnClickListener() {

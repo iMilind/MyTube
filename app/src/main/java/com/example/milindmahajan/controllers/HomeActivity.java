@@ -1,27 +1,27 @@
 package com.example.milindmahajan.mytube;
 
 import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.app.FragmentTabHost;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v4.view.ViewPager;
+
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-
-import java.util.ArrayList;
-import java.util.List;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 
 public class HomeActivity
         extends AppCompatActivity
         implements SearchFragment.SearchFragmentListener, FavoriteFragment.FavoriteFragmentListener {
 
-    TabsPagerAdapter tabsPagerAdapter;
+    private FragmentTabHost tabHost;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,13 +29,26 @@ public class HomeActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
-        tabsPagerAdapter = new TabsPagerAdapter(getSupportFragmentManager());
+        tabHost = (FragmentTabHost) findViewById(R.id.tabhost);
+        tabHost.setup(this, getSupportFragmentManager(), R.id.tabFrameLayout);
 
-        ViewPager viewPager = (ViewPager) findViewById(R.id.viewpager);
-        viewPager.setAdapter(tabsPagerAdapter);
+        tabHost.addTab(
+                tabHost.newTabSpec("Search")
+                        .setIndicator(getTabIndicator(tabHost.getContext(), R.string.search, android.R.drawable.ic_menu_search)),
+                SearchFragment.class, null);
+        tabHost.addTab(
+                tabHost.newTabSpec("Favorite")
+                        .setIndicator(getTabIndicator(tabHost.getContext(), R.string.favorites, android.R.drawable.star_on)),
+                FavoriteFragment.class, null);
+    }
 
-        SlidingTabLayout slidingTabLayout = (SlidingTabLayout) findViewById(R.id.sliding_tabs);
-        slidingTabLayout.setViewPager(viewPager);
+    private View getTabIndicator(Context context, int title, int icon) {
+        View view = LayoutInflater.from(context).inflate(R.layout.tab_layout, null);
+        ImageView iv = (ImageView) view.findViewById(R.id.imageView);
+        iv.setImageResource(icon);
+        TextView tv = (TextView) view.findViewById(R.id.textView);
+        tv.setText(title);
+        return view;
     }
 
     @Override
@@ -85,42 +98,6 @@ public class HomeActivity
 
     }
 
-    private class TabsPagerAdapter extends FragmentPagerAdapter {
-
-        private List <Fragment> fragments = new ArrayList<Fragment>();
-        private String[] tabs = { "Search", "My Favorites" };
-
-        public TabsPagerAdapter(FragmentManager fm) {
-
-            super(fm);
-
-            fragments.add(new SearchFragment());
-            fragments.add(new FavoriteFragment());
-        }
-
-        @Override
-        public Fragment getItem(int i) {
-
-            return fragments.get(i);
-        }
-
-        @Override
-        public int getCount() {
-
-            return 2;
-        }
-
-        @Override
-        public CharSequence getPageTitle(int position) {
-
-            return tabs[position];
-        }
-
-        public Fragment getFragmentAtPosition (int position) {
-
-            return fragments.get(position);
-        }
-    }
 
     @Override
     public void didSelectSearchResult(String videoId) {
@@ -131,8 +108,8 @@ public class HomeActivity
     @Override
     public void didAddVideoToFavorites() {
 
-        FavoriteFragment favoriteFragment = (FavoriteFragment) tabsPagerAdapter.getFragmentAtPosition(1);
-        favoriteFragment.favoritesModified();
+//        FavoriteFragment favoriteFragment = (FavoriteFragment) tabsPagerAdapter.getFragmentAtPosition(1);
+//        favoriteFragment.favoritesModified();
     }
 
     @Override
