@@ -5,6 +5,7 @@ import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
 import com.example.milindmahajan.application_settings.ApplicationSettings;
+import com.example.milindmahajan.dateutils.DateUtil;
 import com.example.milindmahajan.model.Auth;
 import com.example.milindmahajan.model.File;
 import com.google.api.client.auth.oauth2.Credential;
@@ -37,9 +38,10 @@ public class YouTubeConnector {
 
     private static final long NUMBER_OF_VIDEOS_RETURNED = 25;
 
-    public static ArrayList<File> searchVideoWithKeywords(String keywords) {
+    private static YouTube getYoutubeBuilder () {
 
-        YouTube youtube = new YouTube.Builder(new NetHttpTransport(),
+
+        return new YouTube.Builder(new NetHttpTransport(),
                 new JacksonFactory(), new HttpRequestInitializer() {
 
             @Override
@@ -47,13 +49,19 @@ public class YouTubeConnector {
 
             }
         }).setApplicationName("CmpE277_Lab2").build();
+    }
+
+    public static ArrayList<File> searchVideoWithKeywords(String keywords) {
+
+        YouTube youtube = getYoutubeBuilder();
 
         try {
 
+            System.out.println("Accesstoken is "+ApplicationSettings.getSharedSettings().getAccessToken());
             YouTube.Search.List searchItems = youtube.search().list("id,snippet")
                     .setMaxResults(NUMBER_OF_VIDEOS_RETURNED)
                     .setFields("items(id/videoId)")
-                    .setKey(Auth.KEY)
+                    .setKey(ApplicationSettings.getSharedSettings().getAccessToken())
                     .setType("video")
                     .setQ(keywords);
             SearchListResponse searchListResponse = searchItems.execute();
@@ -78,7 +86,7 @@ public class YouTubeConnector {
                     VideoListResponse listResponse = listVideosRequest.execute();
 
                     item.setTitle(listResponse.getItems().get(0).getSnippet().getTitle());
-                    item.setPublishedDate(convertDate(listResponse.getItems().get(0).getSnippet().getPublishedAt().toString()));
+                    item.setPublishedDate(DateUtil.convertDate(listResponse.getItems().get(0).getSnippet().getPublishedAt().toString()));
                     item.setThumbnailURL(listResponse.getItems().get(0).getSnippet().getThumbnails().getDefault().getUrl());
                     item.setId(result.getId().getVideoId());
                     item.setFavorite(belongsToFavorites(playlistItemList, result.getId().getVideoId()));
@@ -103,14 +111,7 @@ public class YouTubeConnector {
 
     public static ArrayList <File> getFavorites() {
 
-        YouTube youtube = new YouTube.Builder(new NetHttpTransport(),
-                new JacksonFactory(), new HttpRequestInitializer() {
-
-            @Override
-            public void initialize(HttpRequest hr) throws IOException {
-
-            }
-        }).setApplicationName("CmpE277_Lab2").build();
+        YouTube youtube = getYoutubeBuilder();
 
         try {
 
@@ -143,7 +144,7 @@ public class YouTubeConnector {
                     }
                     try {
 
-                        item.setPublishedDate(convertDate(result.getSnippet().getPublishedAt().toString()));
+                        item.setPublishedDate(DateUtil.convertDate(result.getSnippet().getPublishedAt().toString()));
                     }
                     catch (Exception exc) {
 
@@ -197,14 +198,7 @@ public class YouTubeConnector {
 
     public static boolean removeFromFavorites(String videoId) {
 
-        YouTube youtube = new YouTube.Builder(new NetHttpTransport(),
-                new JacksonFactory(), new HttpRequestInitializer() {
-
-            @Override
-            public void initialize(HttpRequest hr) throws IOException {
-
-            }
-        }).setApplicationName("CmpE277_Lab2").build();
+        YouTube youtube = getYoutubeBuilder();
 
         try {
 
@@ -221,14 +215,7 @@ public class YouTubeConnector {
 
     public static boolean insertIntoFavorites(File file) {
 
-        YouTube youtube = new YouTube.Builder(new NetHttpTransport(),
-                new JacksonFactory(), new HttpRequestInitializer() {
-
-            @Override
-            public void initialize(HttpRequest hr) throws IOException {
-
-            }
-        }).setApplicationName("CmpE277_Lab2").build();
+        YouTube youtube = getYoutubeBuilder();
 
         try {
 
@@ -272,24 +259,5 @@ public class YouTubeConnector {
         }
 
         return isPresent;
-    }
-
-    private static String convertDate(String fromDate) {
-
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-        Date convertedDate = null;
-
-        try {
-
-            convertedDate = sdf.parse(fromDate);
-            SimpleDateFormat formatter = new SimpleDateFormat("MMM dd, yyyy");
-            String convertedDateString = formatter.format(convertedDate);
-
-            return convertedDateString;
-        } catch(Exception ex){
-
-            ex.printStackTrace();
-            return null;
-        }
     }
 }
