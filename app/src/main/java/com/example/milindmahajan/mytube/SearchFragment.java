@@ -16,7 +16,6 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -36,13 +35,14 @@ public class SearchFragment extends Fragment {
 
     public interface  SearchFragmentListener {
 
-        public void didSelectVideo(String videoId, ArrayList<File> result);
+        public void didSelectSearchResult(String videoId);
+        public void didAddVideoToFavorites();
     }
 
 
     View rootView;
     private Handler handler;
-    private ListView videosFound;
+    private Handler favoriteModifiedHandler;
     private ArrayList<File> searchResults;
 
 
@@ -58,65 +58,66 @@ public class SearchFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
-        System.out.println("onCreate");
     }
 
     @Override
     public void onStart() {
 
         super.onStart();
-        System.out.println("onStart");
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        System.out.println("onCreateView");
+        System.out.println("onCreateView SearchFragment");
         rootView = inflater.inflate(R.layout.fragment_search, container, false);
         handler = new Handler();
+        favoriteModifiedHandler = new Handler();
+
+        addTextChangeListener();
+        addClickListener();
+
+        return rootView;
+    }
+
+    private void addTextChangeListener() {
 
         EditText searchEditText = (EditText) rootView.findViewById(R.id.search_input);
-        videosFound = (ListView)rootView.findViewById(R.id.videos_found);
 
         searchEditText.addTextChangedListener(new TextWatcher() {
 
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
 
-                System.out.println("beforeTextChanged");
             }
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
 
-                System.out.println("onTextChanged");
             }
 
             @Override
             public void afterTextChanged(Editable s) {
 
-                System.out.println("afterTextChanged");
                 searchOnYoutube(s.toString());
             }
         });
-
-        addClickListener();
-
-        return rootView;
     }
 
     private void addClickListener(){
 
-        videosFound.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        ListView searchvideos = (ListView)rootView.findViewById(R.id.search_videos);
+        searchvideos.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
             @Override
             public void onItemClick(AdapterView<?> av, View v, int pos,
                                     long id) {
 
+                System.out.println("onItemClick Adapter View");
                 String videoId = searchResults.get(pos).getId();
 
-                searchFragmentListener.didSelectVideo(videoId, searchResults);
+                searchFragmentListener.didSelectSearchResult(videoId);
             }
 
         });
@@ -128,8 +129,7 @@ public class SearchFragment extends Fragment {
 
             public void run() {
 
-                YouTubeConnector yc = new YouTubeConnector();
-                searchResults = yc.search(keywords);
+                searchResults = YouTubeConnector.searchVideoWithKeywords(keywords);
 
                 if (searchResults.size() != 0) {
 
@@ -166,7 +166,7 @@ public class SearchFragment extends Fragment {
                     convertView = getActivity().getLayoutInflater().inflate(R.layout.search_item, parent, false);
                 }
 
-                File searchResult = searchResults.get(position);
+                final File searchResult = searchResults.get(position);
 
                 if (position % 2 == 0) {
 
@@ -181,14 +181,46 @@ public class SearchFragment extends Fragment {
                 TextView publishedDate = (TextView)convertView.findViewById(R.id.publishedDate);
                 TextView numberOfViews = (TextView)convertView.findViewById(R.id.numberOfViews);
                 Button starButton = (Button)convertView.findViewById(R.id.star);
-                starButton.setTag(searchResult.getId());
+                starButton.setTag(position);
+
+                if (searchResult.isFavorite()) {
+
+                    starButton.setBackgroundResource(R.drawable.star_filled);
+                } else {
+
+                    starButton.setBackgroundResource(R.drawable.star_empty);
+                }
 
                 starButton.setOnClickListener(new View.OnClickListener() {
 
                     @Override
                     public void onClick(View v) {
 
+                        int selectedIndex = (int)v.getTag();
 
+                        final File selectedVideo = searchResults.get(selectedIndex);
+                        new Thread() {
+
+                            public void run() {
+
+                                final boolean isAdded = YouTubeConnector.insertIntoFavorites(selectedVideo);
+                                favoriteModifiedHandler.post(new Runnable() {
+
+                                    public void run() {
+
+                                        if (isAdded) {
+
+                                            searchFragmentListener.didAddVideoToFavorites();
+                                        }
+                                    }
+                                });
+                            }
+                        }.start();
+
+//                        if (isAdded) {
+//
+//                            searchFragmentListener.didAddVideoToFavorites();
+//                        }
                     }
                 });
 
@@ -201,6 +233,7 @@ public class SearchFragment extends Fragment {
             }
         };
 
-        videosFound.setAdapter(adapter);
+        ListView searchvideos = (ListView)rootView.findViewById(R.id.search_videos);
+        searchvideos.setAdapter(adapter);
     }
 }

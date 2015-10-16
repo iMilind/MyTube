@@ -19,6 +19,8 @@ import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.widget.Toast;
 
+import com.example.milindmahajan.application_settings.ApplicationSettings;
+import com.example.milindmahajan.model.Auth;
 import com.google.android.gms.auth.UserRecoverableAuthException;
 import com.google.android.gms.common.AccountPicker;
 import com.google.android.gms.common.ConnectionResult;
@@ -55,7 +57,7 @@ public class LoginActivity
 
     static final int REQUEST_CODE_RECOVER_FROM_PLAY_SERVICES_ERROR = 1001;
 
-    String SCOPE = "oauth2:https://www.googleapis.com/auth/userinfo.profile";
+//    String SCOPE = "oauth2:https://www.googleapis.com/auth/userinfo.profile";
 
 
     /*******************************************************************************************************************
@@ -93,8 +95,6 @@ public class LoginActivity
     protected void onStop() {
 
         super.onStop();
-
-        mGoogleApiClient.disconnect();
     }
 
     @Override
@@ -154,7 +154,7 @@ public class LoginActivity
 
             if (isDeviceOnline()) {
 
-                new AccessTokenUtil(this, mEmail, SCOPE).execute();;
+                new AccessTokenUtil(this, mEmail).execute();;
             } else {
 
                 Toast.makeText(this, "No internet connection", Toast.LENGTH_LONG).show();
@@ -308,6 +308,7 @@ public class LoginActivity
     @Override
     public void didGenerateAccessToken(String accessToken) {
 
+        ApplicationSettings.getSharedSettings().setAccessToken(accessToken);
         Intent intent = new Intent(this, HomeActivity.class);
         startActivity(intent);
     }

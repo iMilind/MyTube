@@ -32,12 +32,10 @@ public class AccessTokenUtil extends AsyncTask {
     private final static String mScopes
             = "oauth2:" + YOUTUBE_API_SCOPE;
 
-    String mScope;
     String mEmail;
 
-    public AccessTokenUtil (Activity activity, String name, String scope) {
+    public AccessTokenUtil (Activity activity, String name) {
 
-        this.mScope = scope;
         this.mEmail = name;
         delegate = (GoogleConnectionUtilProtocol) activity;
     }

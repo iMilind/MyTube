@@ -5,6 +5,7 @@ package com.example.milindmahajan.model;
  */
 public class File {
 
+    private boolean favorite;
     private String id;
     private String title;
     private String numberOfViews;
@@ -49,5 +50,15 @@ public class File {
 
     public void setThumbnailURL(String thumbnail) {
         this.thumbnailURL = thumbnail;
+    }
+
+    public void setFavorite (boolean favorite) {
+
+        this.favorite = favorite;
+    }
+
+    public boolean isFavorite() {
+
+        return this.favorite;
     }
 }
