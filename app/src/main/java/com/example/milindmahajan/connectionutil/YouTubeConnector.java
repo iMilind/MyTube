@@ -1,20 +1,18 @@
 package com.example.milindmahajan.connectionutil;
 
-import android.os.AsyncTask;
-import android.support.annotation.NonNull;
-import android.text.TextUtils;
-
 import com.example.milindmahajan.application_settings.ApplicationSettings;
 import com.example.milindmahajan.dateutils.DateUtil;
 import com.example.milindmahajan.model.Auth;
 import com.example.milindmahajan.model.File;
 import com.google.api.client.auth.oauth2.Credential;
+import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
+import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
-import com.google.api.client.util.Lists;
 import com.google.api.services.youtube.YouTube;
+import com.google.api.services.youtube.YouTubeScopes;
 import com.google.api.services.youtube.model.PlaylistItem;
 import com.google.api.services.youtube.model.PlaylistItemListResponse;
 import com.google.api.services.youtube.model.PlaylistItemSnippet;
@@ -25,9 +23,9 @@ import com.google.api.client.util.Joiner;
 import com.google.api.services.youtube.model.VideoListResponse;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.Collections;
 import java.util.List;
 
 
@@ -39,7 +37,6 @@ public class YouTubeConnector {
     private static final long NUMBER_OF_VIDEOS_RETURNED = 25;
 
     private static YouTube getYoutubeBuilder () {
-
 
         return new YouTube.Builder(new NetHttpTransport(),
                 new JacksonFactory(), new HttpRequestInitializer() {
@@ -61,7 +58,7 @@ public class YouTubeConnector {
             YouTube.Search.List searchItems = youtube.search().list("id,snippet")
                     .setMaxResults(NUMBER_OF_VIDEOS_RETURNED)
                     .setFields("items(id/videoId)")
-                    .setKey(ApplicationSettings.getSharedSettings().getAccessToken())
+                    .setKey(Auth.APIKEY)
                     .setType("video")
                     .setQ(keywords);
             SearchListResponse searchListResponse = searchItems.execute();
@@ -82,7 +79,7 @@ public class YouTubeConnector {
                     String videoId = stringJoiner.join(videoIds);
 
                     YouTube.Videos.List listVideosRequest = youtube.videos().list("snippet, statistics").setId(videoId);
-                    listVideosRequest.setKey(com.example.milindmahajan.model.Auth.KEY);
+                    listVideosRequest.setKey(Auth.APIKEY);
                     VideoListResponse listResponse = listVideosRequest.execute();
 
                     item.setTitle(listResponse.getItems().get(0).getSnippet().getTitle());
@@ -131,7 +128,7 @@ public class YouTubeConnector {
                     String videoId = stringJoiner.join(videoIds);
 
                     YouTube.Videos.List listVideosRequest = youtube.videos().list("snippet, statistics").setId(videoId);
-                    listVideosRequest.setKey(com.example.milindmahajan.model.Auth.KEY);
+                    listVideosRequest.setKey(Auth.APIKEY);
                     VideoListResponse listResponse = listVideosRequest.execute();
 
                     try {
@@ -183,7 +180,7 @@ public class YouTubeConnector {
             YouTube.PlaylistItems.List playlistItems = youtube.playlistItems()
                     .list("snippet")
                     .setMaxResults(NUMBER_OF_VIDEOS_RETURNED)
-                    .setKey(Auth.KEY)
+                    .setKey(Auth.APIKEY)
                     .setPlaylistId(ApplicationSettings.getSharedSettings().getFavoritePlaylistId());
 
             PlaylistItemListResponse playlistListResponse = playlistItems.execute();
