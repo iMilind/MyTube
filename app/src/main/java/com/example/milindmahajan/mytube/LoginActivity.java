@@ -32,6 +32,7 @@ import com.google.android.gms.plus.Plus;
 
 import com.example.milindmahajan.connectionutil.AccessTokenUtil;
 import com.example.milindmahajan.mytube.HomeActivity;
+import com.google.api.services.youtube.YouTubeScopes;
 
 public class LoginActivity
 
@@ -79,6 +80,7 @@ public class LoginActivity
                 .addApi(Plus.API)
                 .addScope(new Scope(Scopes.PROFILE))
                 .addScope(new Scope(Scopes.EMAIL))
+                .addScope(new Scope(YouTubeScopes.YOUTUBE))
                 .build();
     }
 
@@ -151,7 +153,7 @@ public class LoginActivity
 
             if (isDeviceOnline()) {
 
-                new AccessTokenUtil(this, mEmail).execute();;
+                new AccessTokenUtil(this, mEmail).execute();
             } else {
 
                 Toast.makeText(this, "No internet connection", Toast.LENGTH_LONG).show();

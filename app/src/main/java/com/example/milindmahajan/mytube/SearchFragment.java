@@ -2,6 +2,7 @@ package com.example.milindmahajan.mytube;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -20,10 +21,14 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.example.milindmahajan.connectionutil.YouTubeConnector;
+import com.example.milindmahajan.model.Auth;
 import com.example.milindmahajan.model.File;
+import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
+import com.google.api.client.util.ExponentialBackOff;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -125,6 +130,33 @@ public class SearchFragment extends Fragment {
 
     private void searchOnYoutube(final String keywords) {
 
+        GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(
+                getContext(), Arrays.asList(Auth.SCOPES));
+        // set exponential backoff policy
+        credential.setBackOff(new ExponentialBackOff());
+
+        credential.setSelectedAccountName("milind.mahajan@sjsu.edu");
+
+
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... voids) {
+
+                ArrayList <File> results = YouTubeConnector.searchVideoWithKeywords(keywords);
+
+                return results;
+            }
+
+            @Override
+            protected void onPostExecute(ArrayList<File> videos) {
+
+                if (searchResults.size() != 0) {
+
+                    updateVideosFound(searchResults);
+                }
+            }
+        }.execute((Void) null);
+
         new Thread() {
 
             public void run() {
@@ -168,13 +200,13 @@ public class SearchFragment extends Fragment {
 
                 final File searchResult = searchResults.get(position);
 
-                if (position % 2 == 0) {
-
-                    convertView.setBackgroundColor(Color.WHITE);
-                } else {
-
-                    convertView.setBackgroundColor(Color.LTGRAY);
-                }
+//                if (position % 2 == 0) {
+//
+//                    convertView.setBackgroundColor(Color.WHITE);
+//                } else {
+//
+//                    convertView.setBackgroundColor(Color.LTGRAY);
+//                }
 
                 ImageView thumbnail = (ImageView)convertView.findViewById(R.id.video_thumbnail);
                 TextView title = (TextView)convertView.findViewById(R.id.video_title);

@@ -118,6 +118,11 @@ public class HomeActivity
         loadVideo(videoId);
     }
 
+    @Override
+    public void didModifyFavorites () {
+
+    }
+
     private void loadVideo (String videoId) {
 
         try {

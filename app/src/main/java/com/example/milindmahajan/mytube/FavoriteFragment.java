@@ -34,11 +34,13 @@ public class FavoriteFragment extends Fragment {
     public interface  FavoriteFragmentListener {
 
         public void didSelectFavoriteResult(String videoId);
+        public void didModifyFavorites();
     }
 
 
     View rootView;
     private Handler handler;
+    private Handler deletionHandler;
     private ArrayList<File> searchResults;
 
     @Override
@@ -48,6 +50,7 @@ public class FavoriteFragment extends Fragment {
         rootView = inflater.inflate(R.layout.fragment_favorite, container, false);
 
         handler = new Handler();
+        deletionHandler = new Handler();
 
         addClickListener();
 
@@ -131,20 +134,20 @@ public class FavoriteFragment extends Fragment {
 
                 File searchResult = searchResults.get(position);
 
-                if (position % 2 == 0) {
-
-                    convertView.setBackgroundColor(Color.WHITE);
-                } else {
-
-                    convertView.setBackgroundColor(Color.LTGRAY);
-                }
+//                if (position % 2 == 0) {
+//
+//                    convertView.setBackgroundColor(Color.WHITE);
+//                } else {
+//
+//                    convertView.setBackgroundColor(Color.LTGRAY);
+//                }
 
                 ImageView thumbnail = (ImageView)convertView.findViewById(R.id.video_thumbnail);
                 TextView title = (TextView)convertView.findViewById(R.id.video_title);
                 TextView publishedDate = (TextView)convertView.findViewById(R.id.publishedDate);
                 TextView numberOfViews = (TextView)convertView.findViewById(R.id.numberOfViews);
                 Button starButton = (Button)convertView.findViewById(R.id.star);
-                starButton.setTag(searchResult.getId());
+                starButton.setTag(position);
 
                 starButton.setBackgroundResource(android.R.drawable.star_on);
 
@@ -153,7 +156,25 @@ public class FavoriteFragment extends Fragment {
                     @Override
                     public void onClick(View v) {
 
+                        int selectedIndex = (int)v.getTag();
+                        final File selectedVideo = searchResults.get(selectedIndex);
+                        new Thread() {
 
+                            public void run() {
+
+                                final boolean isDeleted = YouTubeConnector.removeFromFavorites(selectedVideo.getId());
+                                deletionHandler.post(new Runnable() {
+
+                                    public void run() {
+
+                                        if (isDeleted) {
+
+                                            getFavorites();
+                                        }
+                                    }
+                                });
+                            }
+                        }.start();
                     }
                 });
 
