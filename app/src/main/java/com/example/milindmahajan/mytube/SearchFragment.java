@@ -137,26 +137,6 @@ public class SearchFragment extends Fragment {
 
         credential.setSelectedAccountName("milind.mahajan@sjsu.edu");
 
-
-        new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... voids) {
-
-                ArrayList <File> results = YouTubeConnector.searchVideoWithKeywords(keywords);
-
-                return results;
-            }
-
-            @Override
-            protected void onPostExecute(ArrayList<File> videos) {
-
-                if (searchResults.size() != 0) {
-
-                    updateVideosFound(searchResults);
-                }
-            }
-        }.execute((Void) null);
-
         new Thread() {
 
             public void run() {
