@@ -2,6 +2,7 @@ package com.example.milindmahajan.mytube;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.support.annotation.Nullable;
@@ -44,9 +45,7 @@ public class SearchFragment extends Fragment {
 
 
     View rootView;
-    private Handler handler;
-    private Handler favoriteModifiedHandler;
-    private ArrayList<File> searchResults;
+    private ArrayList<File> searchResults = new ArrayList<File>();
     String addToFavoritesResponseCode = "-1";
     String removeFromFavoritesResponseCode = "-1";
     int selectedIndex;
@@ -79,6 +78,17 @@ public class SearchFragment extends Fragment {
         hideSoftKeyboard(getActivity(), this.getView());
     }
 
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+
+        super.onSaveInstanceState(savedInstanceState);
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+
+        super.onConfigurationChanged(newConfig);
+    }
 
     public static void hideSoftKeyboard (Activity activity, View view) {
 
@@ -92,8 +102,6 @@ public class SearchFragment extends Fragment {
 
         System.out.println("onCreateView SearchFragment");
         rootView = inflater.inflate(R.layout.fragment_search, container, false);
-        handler = new Handler();
-        favoriteModifiedHandler = new Handler();
 
         addTextChangeListener();
         addClickListener();
@@ -251,7 +259,10 @@ public class SearchFragment extends Fragment {
         @Override
         protected void onPostExecute(ArrayList<File> items) {
 
-            updateVideosFound(searchResults);
+            if (searchResults != null && searchResults.size() != 0) {
+
+                updateVideosFound(searchResults);
+            }
         }
     }
 

@@ -165,12 +165,13 @@ public class YouTubeConnector {
     private static ArrayList <File> getVideosInFavorites () throws JSONException {
 
         /**
-         * https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=PLvHlrhuuRjgWjcspwO0ZapC42l-QKSHmU
+         * https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=PL-ATEPhTf2Qx11lhgZ52adMGDXxPVVT2P
          */
         String getPlayListItemsURL = Constants.BASE_URL+Constants.PLAYLISTITEMS;
 
         StringBuilder getPlayListItemsURLBuilder = new StringBuilder();
         getPlayListItemsURLBuilder.append(Constants.PART).append("="+"snippet");
+        getPlayListItemsURLBuilder.append("&").append(Constants.MAX_RESULTS).append("=").append("40");
         getPlayListItemsURLBuilder.append("&").append("playlistId").append("="+ApplicationSettings.getSharedSettings().getFavoritePlaylistId());
 
         String playlistItemsParams = getPlayListItemsURLBuilder.toString();
