@@ -159,68 +159,65 @@ public class SearchFragment extends Fragment {
 
     private void updateVideosFound(List <File> videoList) {
 
-        if (videoList.size() != 0) {
+        ArrayAdapter<File> adapter = new ArrayAdapter<File>(getActivity().getApplicationContext(), R.layout.search_item, videoList) {
 
-            ArrayAdapter<File> adapter = new ArrayAdapter<File>(getActivity().getApplicationContext(), R.layout.search_item, videoList) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
 
-                @Override
-                public View getView(int position, View convertView, ViewGroup parent) {
+                if(convertView == null) {
 
-                    if(convertView == null) {
-
-                        convertView = getActivity().getLayoutInflater().inflate(R.layout.search_item, parent, false);
-                    }
-
-                    final File searchResult = searchResults.get(position);
-
-                    ImageView thumbnail = (ImageView)convertView.findViewById(R.id.video_thumbnail);
-                    TextView title = (TextView)convertView.findViewById(R.id.video_title);
-                    TextView publishedDate = (TextView)convertView.findViewById(R.id.publishedDate);
-                    TextView numberOfViews = (TextView)convertView.findViewById(R.id.numberOfViews);
-                    Button starButton = (Button)convertView.findViewById(R.id.star);
-                    starButton.setTag(position);
-
-                    if (searchResult.isFavorite()) {
-
-                        starButton.setBackgroundResource(android.R.drawable.star_on);
-                    } else {
-
-                        starButton.setBackgroundResource(android.R.drawable.star_off);
-                    }
-
-                    starButton.setOnClickListener(new View.OnClickListener() {
-
-                        @Override
-                        public void onClick(View v) {
-
-                            selectedIndex = (int)v.getTag();
-
-                            File selectedVideo = searchResults.get(selectedIndex);
-
-                            if (!selectedVideo.isFavorite()) {
-
-                                addToFavoritesResponseCode = "-1";
-                                new AddToFavoritesTask().execute(selectedVideo);
-                            } else {
-
-                                removeFromFavoritesResponseCode = "-1";
-                                new RemoveFromFavoritesTask().execute(selectedVideo.getPlaylistId());
-                            }
-                        }
-                    });
-
-                    Picasso.with(getActivity().getApplicationContext()).load(searchResult.getThumbnailURL()).into(thumbnail);
-                    title.setText(searchResult.getTitle());
-                    publishedDate.setText(searchResult.getPublishedDate());
-                    numberOfViews.setText(searchResult.getNumberOfViews());
-
-                    return convertView;
+                    convertView = getActivity().getLayoutInflater().inflate(R.layout.search_item, parent, false);
                 }
-            };
 
-            ListView searchvideos = (ListView)rootView.findViewById(R.id.search_videos);
-            searchvideos.setAdapter(adapter);
-        }
+                final File searchResult = searchResults.get(position);
+
+                ImageView thumbnail = (ImageView)convertView.findViewById(R.id.video_thumbnail);
+                TextView title = (TextView)convertView.findViewById(R.id.video_title);
+                TextView publishedDate = (TextView)convertView.findViewById(R.id.publishedDate);
+                TextView numberOfViews = (TextView)convertView.findViewById(R.id.numberOfViews);
+                Button starButton = (Button)convertView.findViewById(R.id.star);
+                starButton.setTag(position);
+
+                if (searchResult.isFavorite()) {
+
+                    starButton.setBackgroundResource(android.R.drawable.star_on);
+                } else {
+
+                    starButton.setBackgroundResource(android.R.drawable.star_off);
+                }
+
+                starButton.setOnClickListener(new View.OnClickListener() {
+
+                    @Override
+                    public void onClick(View v) {
+
+                        selectedIndex = (int)v.getTag();
+
+                        File selectedVideo = searchResults.get(selectedIndex);
+
+                        if (!selectedVideo.isFavorite()) {
+
+                            addToFavoritesResponseCode = "-1";
+                            new AddToFavoritesTask().execute(selectedVideo);
+                        } else {
+
+                            removeFromFavoritesResponseCode = "-1";
+                            new RemoveFromFavoritesTask().execute(selectedVideo.getPlaylistId());
+                        }
+                    }
+                });
+
+                Picasso.with(getActivity().getApplicationContext()).load(searchResult.getThumbnailURL()).into(thumbnail);
+                title.setText(searchResult.getTitle());
+                publishedDate.setText(searchResult.getPublishedDate());
+                numberOfViews.setText(searchResult.getNumberOfViews());
+
+                return convertView;
+            }
+        };
+
+        ListView searchvideos = (ListView)rootView.findViewById(R.id.search_videos);
+        searchvideos.setAdapter(adapter);
     }
 
     private void updateVideoInSearchResults(Boolean isFavorite) {
