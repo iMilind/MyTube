@@ -148,7 +148,6 @@ public class YouTubeConnector {
         StringBuilder getPlayListItemsURLBuilder = new StringBuilder();
         getPlayListItemsURLBuilder.append(Constants.PART).append("="+"snippet");
         getPlayListItemsURLBuilder.append("&").append("playlistId").append("="+ApplicationSettings.getSharedSettings().getFavoritePlaylistId());
-        getPlayListItemsURLBuilder.append("&").append(Constants.MAX_RESULTS).append("="+NUMBER_OF_VIDEOS_RETURNED*4);
 
         String playlistItemsParams = getPlayListItemsURLBuilder.toString();
         ArrayList <String> playlistItemsResponse = ConnectionUtil

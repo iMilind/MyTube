@@ -172,8 +172,10 @@ public class FavoriteFragment extends Fragment {
         protected ArrayList<File> doInBackground(String... keyword) {
 
             try {
+
                 searchResults = YouTubeConnector.getFavorites();
             } catch (Exception e) {
+
                 e.printStackTrace();
             }
             return null;
