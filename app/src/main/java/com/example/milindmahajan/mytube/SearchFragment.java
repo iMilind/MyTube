@@ -1,7 +1,7 @@
 package com.example.milindmahajan.mytube;
 
+import android.app.Activity;
 import android.content.Context;
-import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.support.annotation.Nullable;
@@ -12,6 +12,8 @@ import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -21,14 +23,10 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.example.milindmahajan.connectionutil.YouTubeConnector;
-import com.example.milindmahajan.model.Auth;
 import com.example.milindmahajan.model.File;
-import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
-import com.google.api.client.util.ExponentialBackOff;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -49,6 +47,9 @@ public class SearchFragment extends Fragment {
     private Handler handler;
     private Handler favoriteModifiedHandler;
     private ArrayList<File> searchResults;
+    String addToFavoritesResponseCode = "-1";
+    String removeFromFavoritesResponseCode = "-1";
+    int selectedIndex;
 
 
     @Override
@@ -72,6 +73,20 @@ public class SearchFragment extends Fragment {
     }
 
     @Override
+    public void onStop() {
+
+        super.onStop();
+        hideSoftKeyboard(getActivity(), this.getView());
+    }
+
+
+    public static void hideSoftKeyboard (Activity activity, View view) {
+
+        InputMethodManager imm = (InputMethodManager)activity.getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(view.getApplicationWindowToken(), 0);
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
@@ -84,6 +99,15 @@ public class SearchFragment extends Fragment {
         addClickListener();
 
         return rootView;
+    }
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+
+        super.onActivityCreated(savedInstanceState);
+
+        final InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(getView().getWindowToken(), 0);
     }
 
     private void addTextChangeListener() {
@@ -130,115 +154,163 @@ public class SearchFragment extends Fragment {
 
     private void searchOnYoutube(final String keywords) {
 
-        new Thread() {
-
-            public void run() {
-
-                searchResults = YouTubeConnector.searchVideoWithKeywords(keywords);
-
-                if (searchResults.size() != 0) {
-
-                    handler.post(new Runnable() {
-
-                        public void run() {
-
-                            updateVideosFound(searchResults);
-                        }
-                    });
-                }
-            }
-        }.start();
+        new SearchTask().execute(keywords);
     }
 
-    public void reloadListView (List <File> savedState) {
+    private void updateVideosFound(List <File> videoList) {
 
-        if (savedState.size() != 0) {
+        if (videoList.size() != 0) {
 
-            updateVideosFound(savedState);
+            ArrayAdapter<File> adapter = new ArrayAdapter<File>(getActivity().getApplicationContext(), R.layout.search_item, videoList) {
+
+                @Override
+                public View getView(int position, View convertView, ViewGroup parent) {
+
+                    if(convertView == null) {
+
+                        convertView = getActivity().getLayoutInflater().inflate(R.layout.search_item, parent, false);
+                    }
+
+                    final File searchResult = searchResults.get(position);
+
+                    ImageView thumbnail = (ImageView)convertView.findViewById(R.id.video_thumbnail);
+                    TextView title = (TextView)convertView.findViewById(R.id.video_title);
+                    TextView publishedDate = (TextView)convertView.findViewById(R.id.publishedDate);
+                    TextView numberOfViews = (TextView)convertView.findViewById(R.id.numberOfViews);
+                    Button starButton = (Button)convertView.findViewById(R.id.star);
+                    starButton.setTag(position);
+
+                    if (searchResult.isFavorite()) {
+
+                        starButton.setBackgroundResource(android.R.drawable.star_on);
+                    } else {
+
+                        starButton.setBackgroundResource(android.R.drawable.star_off);
+                    }
+
+                    starButton.setOnClickListener(new View.OnClickListener() {
+
+                        @Override
+                        public void onClick(View v) {
+
+                            selectedIndex = (int)v.getTag();
+
+                            File selectedVideo = searchResults.get(selectedIndex);
+
+                            if (!selectedVideo.isFavorite()) {
+
+                                addToFavoritesResponseCode = "-1";
+                                new AddToFavoritesTask().execute(selectedVideo);
+                            } else {
+
+                                removeFromFavoritesResponseCode = "-1";
+                                new RemoveFromFavoritesTask().execute(selectedVideo.getPlaylistId());
+                            }
+                        }
+                    });
+
+                    Picasso.with(getActivity().getApplicationContext()).load(searchResult.getThumbnailURL()).into(thumbnail);
+                    title.setText(searchResult.getTitle());
+                    publishedDate.setText(searchResult.getPublishedDate());
+                    numberOfViews.setText(searchResult.getNumberOfViews());
+
+                    return convertView;
+                }
+            };
+
+            ListView searchvideos = (ListView)rootView.findViewById(R.id.search_videos);
+            searchvideos.setAdapter(adapter);
+        }
+    }
+
+    private void updateVideoInSearchResults(Boolean isFavorite) {
+
+        File selectedVideo = searchResults.get(selectedIndex);
+
+        selectedVideo.setFavorite(isFavorite);
+        searchResults.set(selectedIndex, selectedVideo);
+
+        updateVideosFound(searchResults);
+    }
+
+
+
+    private class SearchTask extends AsyncTask <String, String, ArrayList<File>> {
+
+
+        @Override
+        protected ArrayList<File> doInBackground(String... keyword) {
+
+            try {
+
+                searchResults = YouTubeConnector.searchVideoWithKeywords(keyword[0]);
+            } catch (Exception e) {
+
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(ArrayList<File> items) {
+
+            updateVideosFound(searchResults);
         }
     }
 
 
-    private void updateVideosFound(List <File> videoList) {
 
-        ArrayAdapter<File> adapter = new ArrayAdapter<File>(getActivity().getApplicationContext(), R.layout.search_item, videoList) {
+    private class AddToFavoritesTask extends AsyncTask <File, Void, String> {
 
-            @Override
-            public View getView(int position, View convertView, ViewGroup parent) {
+        @Override
+        protected String doInBackground(File... file) {
 
-                if(convertView == null) {
+            try {
 
-                    convertView = getActivity().getLayoutInflater().inflate(R.layout.search_item, parent, false);
-                }
+                addToFavoritesResponseCode = YouTubeConnector.insertIntoFavorites(file[0]);
+            } catch (Exception e) {
 
-                final File searchResult = searchResults.get(position);
-
-//                if (position % 2 == 0) {
-//
-//                    convertView.setBackgroundColor(Color.WHITE);
-//                } else {
-//
-//                    convertView.setBackgroundColor(Color.LTGRAY);
-//                }
-
-                ImageView thumbnail = (ImageView)convertView.findViewById(R.id.video_thumbnail);
-                TextView title = (TextView)convertView.findViewById(R.id.video_title);
-                TextView publishedDate = (TextView)convertView.findViewById(R.id.publishedDate);
-                TextView numberOfViews = (TextView)convertView.findViewById(R.id.numberOfViews);
-                Button starButton = (Button)convertView.findViewById(R.id.star);
-                starButton.setTag(position);
-
-                if (searchResult.isFavorite()) {
-
-                    starButton.setBackgroundResource(android.R.drawable.star_on);
-                } else {
-
-                    starButton.setBackgroundResource(android.R.drawable.star_off);
-                }
-
-                starButton.setOnClickListener(new View.OnClickListener() {
-
-                    @Override
-                    public void onClick(View v) {
-
-                        int selectedIndex = (int)v.getTag();
-
-                        final File selectedVideo = searchResults.get(selectedIndex);
-                        new Thread() {
-
-                            public void run() {
-
-                                final boolean isAdded = YouTubeConnector.insertIntoFavorites(selectedVideo);
-                                favoriteModifiedHandler.post(new Runnable() {
-
-                                    public void run() {
-
-                                        if (isAdded) {
-
-                                            searchFragmentListener.didAddVideoToFavorites();
-                                        }
-                                    }
-                                });
-                            }
-                        }.start();
-
-//                        if (isAdded) {
-//
-//                            searchFragmentListener.didAddVideoToFavorites();
-//                        }
-                    }
-                });
-
-                Picasso.with(getActivity().getApplicationContext()).load(searchResult.getThumbnailURL()).into(thumbnail);
-                title.setText(searchResult.getTitle());
-                publishedDate.setText(searchResult.getPublishedDate());
-                numberOfViews.setText(searchResult.getNumberOfViews());
-
-                return convertView;
+                e.printStackTrace();
             }
-        };
 
-        ListView searchvideos = (ListView)rootView.findViewById(R.id.search_videos);
-        searchvideos.setAdapter(adapter);
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String responseCode) {
+
+            if (Integer.parseInt(addToFavoritesResponseCode) == 200) {
+
+                updateVideoInSearchResults(true);
+            }
+        }
+    }
+
+
+
+    private class RemoveFromFavoritesTask extends AsyncTask <String , Void, String> {
+
+        @Override
+        protected String doInBackground(String... videoId) {
+
+            try {
+
+                removeFromFavoritesResponseCode = YouTubeConnector.removeFromFavorites(videoId[0]);
+            } catch (Exception e) {
+
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String responseCode) {
+
+            if (Integer.parseInt(removeFromFavoritesResponseCode) == 204) {
+
+                updateVideoInSearchResults(false);
+            }
+        }
     }
 }

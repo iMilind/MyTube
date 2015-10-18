@@ -8,16 +8,12 @@ public class ApplicationSettings {
     private static ApplicationSettings sharedSettings = null;
 
     private String accessToken;
-    private String refreshToken;
     private String favoritePlaylistId;
     private String oAuth2ClientId;
-
     private ApplicationSettings() {
 
         accessToken = "";
-        refreshToken = "";
-        favoritePlaylistId = "PLvHlrhuuRjgWjcspwO0ZapC42l-QKSHmU";
-        oAuth2ClientId = "683723176888-luru1gedl425jc7vg12b43sg31vha84t.apps.googleusercontent.com";
+        favoritePlaylistId = "";
     }
 
     public static ApplicationSettings getSharedSettings() {
@@ -40,23 +36,13 @@ public class ApplicationSettings {
         this.accessToken = accessToken;
     }
 
-    public String getRefreshToken() {
-
-        return this.refreshToken;
-    }
-
-    public void setRefreshToken(String refreshToken) {
-
-        this.refreshToken = refreshToken;
-    }
-
     public String getFavoritePlaylistId () {
 
         return this.favoritePlaylistId;
     }
 
-    public String getoAuth2ClientId () {
+    public void setFavoritePlaylistId (String favoritePlaylistId) {
 
-        return this.oAuth2ClientId;
+        this.favoritePlaylistId = favoritePlaylistId;
     }
 }

@@ -3,7 +3,9 @@ package com.example.milindmahajan.mytube;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.FragmentTabHost;
 import android.support.v7.app.AppCompatActivity;
@@ -16,12 +18,18 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.example.milindmahajan.application_settings.ApplicationSettings;
+import com.example.milindmahajan.connectionutil.YouTubeConnector;
+import com.example.milindmahajan.constants.Constants;
+
 
 public class HomeActivity
         extends AppCompatActivity
         implements SearchFragment.SearchFragmentListener, FavoriteFragment.FavoriteFragmentListener {
 
     private FragmentTabHost tabHost;
+
+    private String playlistId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +48,8 @@ public class HomeActivity
                 tabHost.newTabSpec("Favorite")
                         .setIndicator(getTabIndicator(tabHost.getContext(), R.string.favorites, android.R.drawable.star_on)),
                 FavoriteFragment.class, null);
+
+        new GetFavoritePlaylistTask().execute(Constants.PLAYLIST_NAME);
     }
 
     private View getTabIndicator(Context context, int title, int icon) {
@@ -94,6 +104,12 @@ public class HomeActivity
     }
 
     @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+
+        super.onConfigurationChanged(newConfig);
+    }
+
+    @Override
     public void onBackPressed() {
 
     }
@@ -123,6 +139,7 @@ public class HomeActivity
 
     }
 
+
     private void loadVideo (String videoId) {
 
         try {
@@ -136,6 +153,32 @@ public class HomeActivity
             Intent intent=new Intent(Intent.ACTION_VIEW,
                     Uri.parse("http://www.youtube.com/watch?v="+videoId));
             startActivity(intent);
+        }
+    }
+
+
+
+
+    private class GetFavoritePlaylistTask extends AsyncTask<String , Void, String> {
+
+        @Override
+        protected String doInBackground(String... playlistName) {
+
+            try {
+
+                playlistId = YouTubeConnector.getFavoritePlaylist(playlistName[0]);
+            } catch (Exception e) {
+
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String responseCode) {
+
+            ApplicationSettings.getSharedSettings().setFavoritePlaylistId(playlistId);
         }
     }
 }

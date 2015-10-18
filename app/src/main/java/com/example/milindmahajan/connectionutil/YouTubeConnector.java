@@ -1,33 +1,23 @@
 package com.example.milindmahajan.connectionutil;
 
 import com.example.milindmahajan.application_settings.ApplicationSettings;
-import com.example.milindmahajan.dateutils.DateUtil;
-import com.example.milindmahajan.model.Auth;
+import com.example.milindmahajan.constants.Constants;
 import com.example.milindmahajan.model.File;
-import com.google.api.client.auth.oauth2.Credential;
-import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
-import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
-import com.google.api.client.http.HttpRequest;
-import com.google.api.client.http.HttpRequestInitializer;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.jackson2.JacksonFactory;
-import com.google.api.services.youtube.YouTube;
-import com.google.api.services.youtube.YouTubeScopes;
+import com.google.api.client.util.Joiner;
 import com.google.api.services.youtube.model.PlaylistItem;
-import com.google.api.services.youtube.model.PlaylistItemListResponse;
 import com.google.api.services.youtube.model.PlaylistItemSnippet;
 import com.google.api.services.youtube.model.ResourceId;
-import com.google.api.services.youtube.model.SearchListResponse;
-import com.google.api.services.youtube.model.SearchResult;
-import com.google.api.client.util.Joiner;
-import com.google.api.services.youtube.model.VideoListResponse;
-import com.google.gson.Gson;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -37,230 +27,289 @@ public class YouTubeConnector {
 
     private static final long NUMBER_OF_VIDEOS_RETURNED = 25;
 
-    private static YouTube getYoutubeBuilder () {
+    public static ArrayList<File> searchVideoWithKeywords(String keywords) throws Exception {
 
-        return new YouTube.Builder(new NetHttpTransport(),
-                new JacksonFactory(), new HttpRequestInitializer() {
+        /**
+         * https://www.googleapis.com/youtube/v3/search?part=id%2Csnippet&maxResults=1&q=Maroon+5+Sugar&type=video
+         */
+        String searchVideoURL = Constants.BASE_URL+Constants.SEARCH_PATH;
 
-            @Override
-            public void initialize(HttpRequest hr) throws IOException {
+        StringBuilder searchVideoURLBuilder = new StringBuilder();
+        searchVideoURLBuilder.append(Constants.PART).append("="+"id,snippet");
+        searchVideoURLBuilder.append("&").append(Constants.MAX_RESULTS).append("="+NUMBER_OF_VIDEOS_RETURNED);
+        searchVideoURLBuilder.append("&").append(Constants.KEYWORD).append("=").append(keywords);
+        searchVideoURLBuilder.append("&").append(Constants.TYPE).append("=").append("video");
 
-            }
-        }).setApplicationName("CmpE277_Lab2").build();
-    }
+        String searchRequestParams = searchVideoURLBuilder.toString();
+        ArrayList <String> searchVideoResponse = ConnectionUtil
+                .getResponse(searchVideoURL, searchRequestParams, ApplicationSettings.getSharedSettings().getAccessToken());
 
-    public static ArrayList<File> searchVideoWithKeywords(String keywords) {
+        JSONObject searchVideosJSON = new JSONObject(searchVideoResponse.get(0));
 
-        YouTube youtube = getYoutubeBuilder();
+        Map<String, Object> searchVideoMap = toMap(searchVideosJSON);
 
-        try {
+        ArrayList <Object> searchedVideoItems = new ArrayList<Object>();
+        searchedVideoItems.addAll((Collection<?>) searchVideoMap.get("items"));
 
-            System.out.println("Accesstoken is "+ApplicationSettings.getSharedSettings().getAccessToken());
-            YouTube.Search.List searchItems = youtube.search().list("id,snippet")
-                    .setMaxResults(NUMBER_OF_VIDEOS_RETURNED)
-                    .setFields("items(id/videoId)")
-                    .setKey(Auth.APIKEY)
-                    .setType("video")
-                    .setQ(keywords);
-            SearchListResponse searchListResponse = searchItems.execute();
-            List<SearchResult> searchList = searchListResponse.getItems();
-            List<PlaylistItem> playlistItemList = getVideosInFavorites(youtube);
+        ArrayList<File> items = new ArrayList<File>();
+        ArrayList <File> playlistItemList = getVideosInFavorites();
 
-            ArrayList<File> items = new ArrayList<File>();
+        for (int i = 0; i < searchedVideoItems.size(); i++) {
 
-            for(SearchResult result:searchList) {
+            File file = new File();
 
-                File item = new File();
+            HashMap idMap = ((HashMap)((HashMap)searchedVideoItems.get(i)).get("id"));
 
-                try {
+            Map<String, Object> videoMap = getVideoDetails((String) idMap.get("videoId"));
 
-                    List<String> videoIds = new ArrayList<String>();
-                    videoIds.add(result.getId().getVideoId());
-                    Joiner stringJoiner = Joiner.on(',');
-                    String videoId = stringJoiner.join(videoIds);
+            ArrayList <Object> videoItems = new ArrayList<Object>();
+            videoItems.addAll((Collection<?>) videoMap.get("items"));
 
-                    YouTube.Videos.List listVideosRequest = youtube.videos().list("snippet, statistics").setId(videoId);
-                    listVideosRequest.setKey(Auth.APIKEY);
-                    VideoListResponse listResponse = listVideosRequest.execute();
+            HashMap snippetMap = ((HashMap) ((HashMap) videoItems.get(0)).get("snippet"));
+            HashMap statisticsMap = ((HashMap) ((HashMap) videoItems.get(0)).get("statistics"));
 
-                    item.setTitle(listResponse.getItems().get(0).getSnippet().getTitle());
-                    item.setPublishedDate(DateUtil.convertDate(listResponse.getItems().get(0).getSnippet().getPublishedAt().toString()));
-                    item.setThumbnailURL(listResponse.getItems().get(0).getSnippet().getThumbnails().getDefault().getUrl());
-                    item.setId(result.getId().getVideoId());
-                    item.setFavorite(belongsToFavorites(playlistItemList, result.getId().getVideoId()));
-                    item.setNumberOfViews(listResponse.getItems().get(0).getStatistics().getViewCount().toString());
-                } catch (Exception exc) {
+            file.setId((String) ((HashMap)videoItems.get(0)).get("id"));
+            file.setPublishedDate((String) snippetMap.get("publishedAt"));
+            file.setTitle((String) snippetMap.get("title"));
+            file.setThumbnailURL((String) ((HashMap) (((HashMap) snippetMap.get("thumbnails"))).get("default")).get("url"));
+            String playlistId = getPlaylistId(playlistItemList, file.getId());
+            file.setPlaylistId(playlistId);
+            file.setFavorite((playlistId != "0"));
+            file.setNumberOfViews((String) statisticsMap.get("viewCount"));
 
-                    item.setTitle("Exception case");
-                    item.setPublishedDate("Exception date");
-                    item.setNumberOfViews("Exception count");
-                }
-
-                items.add(item);
-            }
-
-            return items;
-        } catch(IOException e){
-
-            e.printStackTrace();
-            return null;
+            items.add(file);
         }
+
+        return items;
     }
 
-    public static ArrayList <File> getFavorites() {
+    private static Map<String, Object> getVideoDetails (String id) throws JSONException {
 
-        YouTube youtube = getYoutubeBuilder();
+        /**
+         * https://www.googleapis.com/youtube/v3/videos?part=snippet&id=yzTuBuRdAyA
+         */
+        List<String> videoIds = new ArrayList<String>();
+        videoIds.add(id);
+        Joiner stringJoiner = Joiner.on(',');
+        String videoId = stringJoiner.join(videoIds);
 
-        try {
+        String videoURL = Constants.BASE_URL+Constants.GET_VIDEO;
 
-            List<PlaylistItem> playlistItemList = getVideosInFavorites(youtube);
+        StringBuilder videoURLBuilder = new StringBuilder();
+        videoURLBuilder.append(Constants.PART).append("="+Constants.SNIPPET+","+Constants.STATISTICS);
+        videoURLBuilder.append("&").append(Constants.ID).append("="+videoId);
 
-            ArrayList<File> items = new ArrayList<File>();
+        String videoRequestParams = videoURLBuilder.toString();
+        ArrayList <String> videoResponse = ConnectionUtil
+                .getResponse(videoURL, videoRequestParams, ApplicationSettings.getSharedSettings().getAccessToken());
 
-            for(PlaylistItem result:playlistItemList) {
+        JSONObject videoJSON = new JSONObject(videoResponse.get(0));
 
-                File item = new File();
+        Map<String, Object> videoMap = toMap(videoJSON);
 
-                try {
+        return videoMap;
+    }
 
-                    List<String> videoIds = new ArrayList<String>();
-                    videoIds.add(result.getId());
-                    Joiner stringJoiner = Joiner.on(',');
-                    String videoId = stringJoiner.join(videoIds);
+    public static ArrayList <File> getFavorites() throws JSONException {
 
-                    YouTube.Videos.List listVideosRequest = youtube.videos().list("snippet, statistics").setId(videoId);
-                    listVideosRequest.setKey(Auth.APIKEY);
-                    VideoListResponse listResponse = listVideosRequest.execute();
+        ArrayList <File> playlistItemList = getVideosInFavorites();
 
-                    try {
+        for (int i = 0; i < playlistItemList.size(); i++) {
 
-                        item.setTitle(result.getSnippet().getTitle());
-                    }
-                    catch (Exception exc) {
+            File file = playlistItemList.get(i);
 
-                        item.setTitle("Exception case");
-                    }
-                    try {
+            Map<String, Object> videoMap = getVideoDetails(file.getId());
 
-                        item.setPublishedDate(DateUtil.convertDate(result.getSnippet().getPublishedAt().toString()));
-                    }
-                    catch (Exception exc) {
+            ArrayList <Object> videoItems = new ArrayList<Object>();
+            videoItems.addAll((Collection<?>) videoMap.get("items"));
 
-                        item.setPublishedDate("Exception date");
-                    }
-                    try {
+            HashMap snippetMap = ((HashMap) ((HashMap) videoItems.get(0)).get(Constants.SNIPPET));
+            HashMap statisticsMap = ((HashMap) ((HashMap) videoItems.get(0)).get(Constants.STATISTICS));
 
-                        item.setNumberOfViews(listResponse.getItems().get(0).getStatistics().getViewCount().toString());
-                    } catch (Exception exc) {
+            file.setPublishedDate((String) snippetMap.get("publishedAt"));
+            file.setTitle((String) snippetMap.get("title"));
+            file.setThumbnailURL((String) ((HashMap) (((HashMap) snippetMap.get("thumbnails"))).get("default")).get("url"));
+            file.setFavorite(true);
+            file.setNumberOfViews((String) statisticsMap.get("viewCount"));
 
-                        item.setNumberOfViews("Exception count");
-                    }
-
-                    item.setThumbnailURL(result.getSnippet().getThumbnails().getDefault().getUrl());
-                    item.setId(result.getId());
-                } catch (Exception exc) {
-
-                }
-
-                items.add(item);
-            }
-
-            return items;
-
-        } catch (Exception exc) {
-
-            exc.printStackTrace();
+            playlistItemList.set(i, file);
         }
-        return null;
+
+        return playlistItemList;
     }
 
-    private static List <PlaylistItem> getVideosInFavorites (YouTube youtube) {
+    private static ArrayList <File> getVideosInFavorites () throws JSONException {
 
-        try {
+        /**
+         * https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=PLvHlrhuuRjgWjcspwO0ZapC42l-QKSHmU
+         */
+        String getPlayListItemsURL = Constants.BASE_URL+Constants.PLAYLISTITEMS;
 
-            YouTube.PlaylistItems.List playlistItems = youtube.playlistItems()
-                    .list("snippet")
-                    .setMaxResults(NUMBER_OF_VIDEOS_RETURNED)
-                    .setKey(Auth.APIKEY)
-                    .setPlaylistId(ApplicationSettings.getSharedSettings().getFavoritePlaylistId());
+        StringBuilder getPlayListItemsURLBuilder = new StringBuilder();
+        getPlayListItemsURLBuilder.append(Constants.PART).append("="+"snippet");
+        getPlayListItemsURLBuilder.append("&").append("playlistId").append("="+ApplicationSettings.getSharedSettings().getFavoritePlaylistId());
 
-            PlaylistItemListResponse playlistListResponse = playlistItems.execute();
-            List<PlaylistItem> playlistItemList = playlistListResponse.getItems();
+        String playlistItemsParams = getPlayListItemsURLBuilder.toString();
+        ArrayList <String> playlistItemsResponse = ConnectionUtil
+                .getResponse(getPlayListItemsURL, playlistItemsParams, ApplicationSettings.getSharedSettings().getAccessToken());
 
-            return playlistItemList;
-        } catch (IOException exc) {
+        JSONObject playlistItemsJSON = new JSONObject(playlistItemsResponse.get(0));
 
-            return null;
+        Map<String, Object> playlistItemsMap = toMap(playlistItemsJSON);
+
+        ArrayList <Object> playlistVideoItems = new ArrayList<Object>();
+        playlistVideoItems.addAll((Collection<?>) playlistItemsMap.get("items"));
+
+        ArrayList <File> favoritePlayList = new ArrayList<File>();
+
+        for (int i = 0; i < playlistVideoItems.size(); i++) {
+
+            File file = new File();
+
+            HashMap snippetMap = ((HashMap)((HashMap) playlistVideoItems.get(i)).get("snippet"));
+            file.setId((String) ((HashMap) snippetMap.get("resourceId")).get("videoId"));
+            file.setPlaylistId(((String)((HashMap)playlistVideoItems.get(i)).get("id")));
+
+            favoritePlayList.add(file);
         }
+
+        return favoritePlayList;
     }
 
-    public static boolean removeFromFavorites(String videoId) {
+    public static String getFavoritePlaylist(String playlistName) throws JSONException {
 
-        YouTube youtube = getYoutubeBuilder();
+        /**
+         * https://www.googleapis.com/youtube/v3/playlists?part=id%2Csnippet&mine=true
+         */
 
-        try {
+        String getPlayListItemsURL = Constants.BASE_URL+Constants.PLAYLISTS;
 
-            YouTube.PlaylistItems.Delete delete = youtube.playlistItems().delete(videoId);
-            delete.execute();
+        StringBuilder getPlayListURLBuilder = new StringBuilder();
+        getPlayListURLBuilder.append(Constants.PART).append("="+Constants.ID);
+        getPlayListURLBuilder.append(",").append("snippet");
+        getPlayListURLBuilder.append("&").append(Constants.MINE).append("="+"true");
 
-            return true;
-        } catch (IOException exc) {
+        String playlistParams = getPlayListURLBuilder.toString();
+        ArrayList <String> playlistResponse = ConnectionUtil
+                .getResponse(getPlayListItemsURL, playlistParams, ApplicationSettings.getSharedSettings().getAccessToken());
 
-            exc.printStackTrace();
-            return false;
-        }
+        JSONObject playlistJSON = new JSONObject(playlistResponse.get(0));
+
+        Map<String, Object> playlistMap = toMap(playlistJSON);
+
+        ArrayList <Object> playlistList = new ArrayList<Object>();
+        playlistList.addAll((Collection<?>) playlistMap.get("items"));
+
+        String playlistId = (String)((HashMap) playlistList.get(0)).get("id");
+        return playlistId;
     }
 
-    public static boolean insertIntoFavorites(File file) {
+    public static String removeFromFavorites(String videoId) {
 
-        YouTube youtube = getYoutubeBuilder();
+        /**
+         * https://www.googleapis.com/youtube/v3/playlistItems?id=PLi_rXDdOef2RhLGgX4nvVjnvJpHPAdX0sp1MDqaKUFDo
+         */
+        String deletePlayListItemsURL = Constants.BASE_URL+Constants.PLAYLISTITEMS;
 
-        try {
+        StringBuilder deletePlayListItemsURLBuilder = new StringBuilder();
+        deletePlayListItemsURLBuilder.append(Constants.ID).append("="+videoId);
+        String insertPlaylistItemsParams = deletePlayListItemsURLBuilder.toString();
 
-            ResourceId resourceId = new ResourceId();
-            resourceId.setKind("youtube#video");
-            resourceId.setVideoId(file.getId());
+        String responseCode = ConnectionUtil.postRequest(deletePlayListItemsURL, insertPlaylistItemsParams,
+                "", ApplicationSettings.getSharedSettings().getAccessToken(), false);
 
-            PlaylistItemSnippet playlistItemSnippet = new PlaylistItemSnippet();
-            playlistItemSnippet.setTitle(file.getTitle());
-            playlistItemSnippet.setPlaylistId(ApplicationSettings.getSharedSettings().getFavoritePlaylistId());
-            playlistItemSnippet.setResourceId(resourceId);
-
-            PlaylistItem playlistItem = new PlaylistItem();
-            playlistItem.setSnippet(playlistItemSnippet);
-
-            Gson gson = new Gson();
-            String json = gson.toJson(playlistItem);
-
-            System.out.println("JSON repr "+json);
-
-            YouTube.PlaylistItems.Insert insert = youtube.playlistItems()
-                    .insert("snippet,contentDetails", playlistItem);
-            PlaylistItem returnedPlaylistItem = insert.execute();
-
-            return (returnedPlaylistItem == null);
-
-        } catch (IOException exc) {
-
-            exc.printStackTrace();
-            return false;
-        }
+        return responseCode;
     }
 
-    private static boolean belongsToFavorites (List<PlaylistItem> playlistItemList, String videoId) {
+    public static String insertIntoFavorites(File file) {
 
-        boolean isPresent = false;
-        for(PlaylistItem result:playlistItemList) {
+        /**
+         * https://www.googleapis.com/youtube/v3/playlistItems?part=snippet%2CcontentDetails
+         */
+        ResourceId resourceId = new ResourceId();
+        resourceId.setKind("youtube#video");
+        resourceId.setVideoId(file.getId());
 
-            System.out.println("Searching for ID "+videoId);
-            System.out.println("List ITEM ID "+result.getSnippet().getResourceId().getVideoId());
-            if (result.getSnippet().getResourceId().getVideoId().equals(videoId)) {
+        PlaylistItemSnippet playlistItemSnippet = new PlaylistItemSnippet();
+        playlistItemSnippet.setTitle(file.getTitle());
+        playlistItemSnippet.setPlaylistId(ApplicationSettings.getSharedSettings().getFavoritePlaylistId());
+        playlistItemSnippet.setResourceId(resourceId);
 
-                isPresent = true;
+        PlaylistItem playlistItem = new PlaylistItem();
+        playlistItem.setSnippet(playlistItemSnippet);
+
+        JSONObject insertPlaylistItemRequestBody = new JSONObject(playlistItem);
+
+        String insertPlayListItemsURL = Constants.BASE_URL+Constants.PLAYLISTITEMS;
+
+        StringBuilder insertPlayListItemsURLBuilder = new StringBuilder();
+        insertPlayListItemsURLBuilder.append(Constants.PART).append("="+"snippet");
+        insertPlayListItemsURLBuilder.append(",").append("contentDetails");
+        String insertPlaylistItemsParams = insertPlayListItemsURLBuilder.toString();
+
+        String responseCode = ConnectionUtil.postRequest(insertPlayListItemsURL, insertPlaylistItemsParams,
+                insertPlaylistItemRequestBody.toString(), ApplicationSettings.getSharedSettings().getAccessToken(), true);
+
+        return responseCode;
+    }
+
+    private static String getPlaylistId (ArrayList<File> playlistItemList, String videoId) {
+
+        String playlistId = "0";
+        for(File file:playlistItemList) {
+
+            if (file.getId().equals(videoId)) {
+
+                playlistId = file.getPlaylistId();
                 break;
             }
         }
 
-        return isPresent;
+        return playlistId;
+    }
+
+    public static Map<String, Object> jsonToMap(JSONObject json) throws JSONException {
+        Map<String, Object> retMap = new HashMap<String, Object>();
+
+        if(json != JSONObject.NULL) {
+            retMap = toMap(json);
+        }
+        return retMap;
+    }
+
+    public static Map<String, Object> toMap(JSONObject object) throws JSONException {
+        Map<String, Object> map = new HashMap<String, Object>();
+
+        Iterator<String> keysItr = object.keys();
+        while(keysItr.hasNext()) {
+            String key = keysItr.next();
+            Object value = object.get(key);
+
+            if(value instanceof JSONArray) {
+                value = toList((JSONArray) value);
+            }
+
+            else if(value instanceof JSONObject) {
+                value = toMap((JSONObject) value);
+            }
+            map.put(key, value);
+        }
+        return map;
+    }
+
+    public static List<Object> toList(JSONArray array) throws JSONException {
+        List<Object> list = new ArrayList<Object>();
+        for(int i = 0; i < array.length(); i++) {
+            Object value = array.get(i);
+            if(value instanceof JSONArray) {
+                value = toList((JSONArray) value);
+            }
+
+            else if(value instanceof JSONObject) {
+                value = toMap((JSONObject) value);
+            }
+            list.add(value);
+        }
+        return list;
     }
 }

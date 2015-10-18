@@ -46,7 +46,7 @@ public class ConnectionUtil {
             con = (HttpsURLConnection)urlObj.openConnection();
             con.setRequestMethod("GET");
             con.setDoInput(true);
-            con.setDoOutput(true);
+            con.setDoOutput(false);
 
             con.setRequestProperty("Authorization: Bearer",accessToken);
             in = new BufferedReader(
@@ -59,27 +59,28 @@ public class ConnectionUtil {
 
         } catch (Exception e)
         {
+            in = new BufferedReader(
+                    new InputStreamReader(con.getErrorStream()));
+            String inputLine = "";
+
+            try
+            {
+                while ((inputLine = in.readLine()) != null)
+                {
+                    response.append(inputLine);
+                }
+            }
+            catch (IOException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            }
             if(responseCode == -1)
             {
 
             }
             else
             {
-                in = new BufferedReader(
-                        new InputStreamReader(con.getErrorStream()));
-                String inputLine = "";
 
-                try
-                {
-                    while ((inputLine = in.readLine()) != null)
-                    {
-                        response.append(inputLine);
-                    }
-                }
-                catch (IOException e1) {
-                    // TODO Auto-generated catch block
-                    e1.printStackTrace();
-                }
 
                 System.out.println(response.toString());
             }
@@ -108,7 +109,7 @@ public class ConnectionUtil {
      * @param accessToken - String
      * @return responseCode - String
      */
-    public static String postResponse(String url, String reqParam, String reqBody, String accessToken)
+    public static String postRequest(String url, String reqParam, String reqBody, String accessToken, Boolean isPost)
     {
         StringBuilder response = null;
         StringBuilder urlBuilder =  null;
@@ -128,9 +129,15 @@ public class ConnectionUtil {
             URL urlObj = new URL(urlBuilder.toString());
 
             con = (HttpsURLConnection)urlObj.openConnection();
-            con.setRequestMethod("POST");
+            if (isPost) {
+
+                con.setRequestMethod("POST");
+            } else {
+
+                con.setRequestMethod("DELETE");
+            }
             con.setDoInput(true);
-            con.setDoOutput(true);
+            con.setDoOutput(false);
 
             con.setRequestProperty("Authorization: Bearer",accessToken);
             con.setRequestProperty("Content-Type", "application/json");

@@ -20,7 +20,6 @@ import android.support.annotation.NonNull;
 import android.widget.Toast;
 
 import com.example.milindmahajan.application_settings.ApplicationSettings;
-import com.example.milindmahajan.model.Auth;
 import com.google.android.gms.auth.UserRecoverableAuthException;
 import com.google.android.gms.common.AccountPicker;
 import com.google.android.gms.common.ConnectionResult;
@@ -31,7 +30,6 @@ import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.plus.Plus;
 
 import com.example.milindmahajan.connectionutil.AccessTokenUtil;
-import com.example.milindmahajan.mytube.HomeActivity;
 import com.google.api.services.youtube.YouTubeScopes;
 
 public class LoginActivity

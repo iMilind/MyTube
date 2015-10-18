@@ -1,11 +1,14 @@
 package com.example.milindmahajan.model;
 
+import com.example.milindmahajan.dateutils.DateUtil;
+
 /**
  * Created by milind.mahajan on 10/10/15.
  */
 public class File {
 
     private boolean favorite;
+    private String playlistId;
     private String id;
     private String title;
     private String numberOfViews;
@@ -29,7 +32,8 @@ public class File {
     }
 
     public String getPublishedDate() {
-        return publishedDate;
+
+        return DateUtil.convertDate(this.publishedDate);
     }
 
     public void setPublishedDate(String publishedDate) {
@@ -60,5 +64,15 @@ public class File {
     public boolean isFavorite() {
 
         return this.favorite;
+    }
+
+    public void setPlaylistId (String playlistId) {
+
+        this.playlistId = playlistId;
+    }
+
+    public String getPlaylistId () {
+
+        return this.playlistId;
     }
 }

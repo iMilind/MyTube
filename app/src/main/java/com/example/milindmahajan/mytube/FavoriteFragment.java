@@ -2,6 +2,7 @@ package com.example.milindmahajan.mytube;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
@@ -42,6 +43,8 @@ public class FavoriteFragment extends Fragment {
     private Handler handler;
     private Handler deletionHandler;
     private ArrayList<File> searchResults;
+    int selectedIndex;
+    String removeFromFavoritesResponseCode = "-1";
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -100,24 +103,7 @@ public class FavoriteFragment extends Fragment {
 
     private void getFavorites() {
 
-        new Thread() {
-
-            public void run() {
-
-                searchResults = YouTubeConnector.getFavorites();
-
-                if (searchResults.size() != 0) {
-
-                    handler.post(new Runnable() {
-
-                        public void run() {
-
-                            updateVideosFound(searchResults);
-                        }
-                    });
-                }
-            }
-        }.start();
+        new FavoriteTask().execute();
     }
 
     private void updateVideosFound(List <File> videoList) {
@@ -134,14 +120,6 @@ public class FavoriteFragment extends Fragment {
 
                 File searchResult = searchResults.get(position);
 
-//                if (position % 2 == 0) {
-//
-//                    convertView.setBackgroundColor(Color.WHITE);
-//                } else {
-//
-//                    convertView.setBackgroundColor(Color.LTGRAY);
-//                }
-
                 ImageView thumbnail = (ImageView)convertView.findViewById(R.id.video_thumbnail);
                 TextView title = (TextView)convertView.findViewById(R.id.video_title);
                 TextView publishedDate = (TextView)convertView.findViewById(R.id.publishedDate);
@@ -156,25 +134,12 @@ public class FavoriteFragment extends Fragment {
                     @Override
                     public void onClick(View v) {
 
-                        int selectedIndex = (int)v.getTag();
-                        final File selectedVideo = searchResults.get(selectedIndex);
-                        new Thread() {
+                        selectedIndex = (int)v.getTag();
 
-                            public void run() {
+                        File selectedVideo = searchResults.get(selectedIndex);
 
-                                final boolean isDeleted = YouTubeConnector.removeFromFavorites(selectedVideo.getId());
-                                deletionHandler.post(new Runnable() {
-
-                                    public void run() {
-
-                                        if (isDeleted) {
-
-                                            getFavorites();
-                                        }
-                                    }
-                                });
-                            }
-                        }.start();
+                        removeFromFavoritesResponseCode = "-1";
+                        new RemoveFromFavoritesTask().execute(selectedVideo.getPlaylistId());
                     }
                 });
 
@@ -191,8 +156,61 @@ public class FavoriteFragment extends Fragment {
         favoriteVideos.setAdapter(adapter);
     }
 
-    public void favoritesModified () {
+    private void updateVideoInSearchResults(Boolean isFavorite) {
 
-        getFavorites();
+        searchResults.remove(selectedIndex);
+
+        updateVideosFound(searchResults);
+    }
+
+
+
+
+    public class FavoriteTask extends AsyncTask<String, String, ArrayList<File>> {
+
+        @Override
+        protected ArrayList<File> doInBackground(String... keyword) {
+
+            try {
+                searchResults = YouTubeConnector.getFavorites();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(ArrayList<File> items) {
+
+            updateVideosFound(searchResults);
+        }
+    }
+
+
+
+    private class RemoveFromFavoritesTask extends AsyncTask <String , Void, String> {
+
+        @Override
+        protected String doInBackground(String... videoId) {
+
+            try {
+
+                removeFromFavoritesResponseCode = YouTubeConnector.removeFromFavorites(videoId[0]);
+            } catch (Exception e) {
+
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String responseCode) {
+
+            if (Integer.parseInt(removeFromFavoritesResponseCode) != -1) {
+
+                updateVideoInSearchResults(false);
+            }
+        }
     }
 }
