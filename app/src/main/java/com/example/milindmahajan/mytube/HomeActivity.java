@@ -30,6 +30,7 @@ public class HomeActivity
     private FragmentTabHost tabHost;
 
     private String playlistId;
+    private String addPlaylistResponseCode;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -178,7 +179,40 @@ public class HomeActivity
         @Override
         protected void onPostExecute(String responseCode) {
 
-            ApplicationSettings.getSharedSettings().setFavoritePlaylistId(playlistId);
+            if (playlistId == null) {
+                new AddFavoritePlaylistTask().execute();
+            } else {
+
+                ApplicationSettings.getSharedSettings().setFavoritePlaylistId(playlistId);
+            }
+        }
+    }
+
+
+
+    private class AddFavoritePlaylistTask extends AsyncTask<Void , Void, String> {
+
+        @Override
+        protected String doInBackground(Void... voids) {
+
+            try {
+
+                addPlaylistResponseCode = YouTubeConnector.createFavoritesPlaylist();
+            } catch (Exception e) {
+
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String responseCode) {
+
+            if (addPlaylistResponseCode.equals("200")) {
+
+                new GetFavoritePlaylistTask().execute(Constants.PLAYLIST_NAME);
+            }
         }
     }
 }

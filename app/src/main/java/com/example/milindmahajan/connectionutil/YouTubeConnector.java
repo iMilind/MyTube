@@ -4,8 +4,10 @@ import com.example.milindmahajan.application_settings.ApplicationSettings;
 import com.example.milindmahajan.constants.Constants;
 import com.example.milindmahajan.model.File;
 import com.google.api.client.util.Joiner;
+import com.google.api.services.youtube.model.Playlist;
 import com.google.api.services.youtube.model.PlaylistItem;
 import com.google.api.services.youtube.model.PlaylistItemSnippet;
+import com.google.api.services.youtube.model.PlaylistSnippet;
 import com.google.api.services.youtube.model.ResourceId;
 
 import org.json.JSONArray;
@@ -108,6 +110,28 @@ public class YouTubeConnector {
         Map<String, Object> videoMap = toMap(videoJSON);
 
         return videoMap;
+    }
+
+    public static String createFavoritesPlaylist() throws JSONException {
+
+        PlaylistSnippet playlistSnippet = new PlaylistSnippet();
+        playlistSnippet.setTitle(Constants.PLAYLIST_NAME);
+
+        Playlist playlist = new Playlist();
+        playlist.setSnippet(playlistSnippet);
+
+        JSONObject insertPlaylistRequestBody = new JSONObject(playlist);
+
+        String insertPlayListURL = Constants.BASE_URL+Constants.PLAYLISTS;
+
+        StringBuilder insertPlayListURLBuilder = new StringBuilder();
+        insertPlayListURLBuilder.append(Constants.PART).append("="+"snippet");
+        String insertPlaylistParams = insertPlayListURLBuilder.toString();
+
+        String responseCode = ConnectionUtil.postRequest(insertPlayListURL, insertPlaylistParams,
+                insertPlaylistRequestBody.toString(), ApplicationSettings.getSharedSettings().getAccessToken(), true);
+
+        return responseCode;
     }
 
     public static ArrayList <File> getFavorites() throws JSONException {
