@@ -21,6 +21,7 @@ import com.google.api.services.youtube.model.SearchListResponse;
 import com.google.api.services.youtube.model.SearchResult;
 import com.google.api.client.util.Joiner;
 import com.google.api.services.youtube.model.VideoListResponse;
+import com.google.gson.Gson;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -227,6 +228,11 @@ public class YouTubeConnector {
 
             PlaylistItem playlistItem = new PlaylistItem();
             playlistItem.setSnippet(playlistItemSnippet);
+
+            Gson gson = new Gson();
+            String json = gson.toJson(playlistItem);
+
+            System.out.println("JSON repr "+json);
 
             YouTube.PlaylistItems.Insert insert = youtube.playlistItems()
                     .insert("snippet,contentDetails", playlistItem);
