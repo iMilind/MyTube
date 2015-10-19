@@ -8,12 +8,14 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -44,6 +46,7 @@ public class FavoriteFragment extends Fragment {
     private ArrayList<File> searchResults = new ArrayList<File>();
     int selectedIndex;
     String removeFromFavoritesResponseCode = "-1";
+    ArrayAdapter<File> adapter;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -121,7 +124,9 @@ public class FavoriteFragment extends Fragment {
 
     private void updateVideosFound(List <File> videoList) {
 
-        ArrayAdapter<File> adapter = new ArrayAdapter<File>(getActivity().getApplicationContext(), R.layout.search_item, videoList) {
+        adapter = new ArrayAdapter<File>(getActivity().getApplicationContext(), R.layout.search_item, videoList) {
+
+            ArrayList <File> selectedFiles = new ArrayList<File>();
 
             @Override
             public View getView(int position, View convertView, ViewGroup parent) {
@@ -138,6 +143,8 @@ public class FavoriteFragment extends Fragment {
                 TextView publishedDate = (TextView)convertView.findViewById(R.id.publishedDate);
                 TextView numberOfViews = (TextView)convertView.findViewById(R.id.numberOfViews);
                 Button starButton = (Button)convertView.findViewById(R.id.star);
+                CheckBox checkBox = (CheckBox)convertView.findViewById(R.id.selectionCheckBox);
+                checkBox.setVisibility(View.VISIBLE);
                 starButton.setTag(position);
 
                 starButton.setBackgroundResource(android.R.drawable.star_on);

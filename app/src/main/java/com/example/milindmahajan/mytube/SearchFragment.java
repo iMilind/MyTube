@@ -10,14 +10,17 @@ import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -121,23 +124,19 @@ public class SearchFragment extends Fragment {
     private void addTextChangeListener() {
 
         EditText searchEditText = (EditText) rootView.findViewById(R.id.search_input);
+        final String searchQuery = searchEditText.getText().toString();
 
-        searchEditText.addTextChangedListener(new TextWatcher() {
+        searchEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_SEND ||
+                        actionId == EditorInfo.IME_ACTION_GO ||
+                        actionId == EditorInfo.IME_ACTION_DONE) {
 
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-
-                searchOnYoutube(s.toString());
+                    hideSoftKeyboard(getActivity(), rootView);
+                    searchOnYoutube(searchQuery);
+                    return true;
+                }
+                return false;
             }
         });
     }
@@ -184,6 +183,8 @@ public class SearchFragment extends Fragment {
                 TextView publishedDate = (TextView)convertView.findViewById(R.id.publishedDate);
                 TextView numberOfViews = (TextView)convertView.findViewById(R.id.numberOfViews);
                 Button starButton = (Button)convertView.findViewById(R.id.star);
+                CheckBox checkBox = (CheckBox)convertView.findViewById(R.id.selectionCheckBox);
+                checkBox.setVisibility(View.INVISIBLE);
                 starButton.setTag(position);
 
                 if (searchResult.isFavorite()) {
