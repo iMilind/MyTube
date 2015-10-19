@@ -124,10 +124,14 @@ public class SearchFragment extends Fragment {
     private void addTextChangeListener() {
 
         EditText searchEditText = (EditText) rootView.findViewById(R.id.search_input);
-        final String searchQuery = searchEditText.getText().toString();
 
         searchEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+
+                EditText searchEditText = (EditText) rootView.findViewById(R.id.search_input);
+                String searchQuery = searchEditText.getText().toString();
+
                 if (actionId == EditorInfo.IME_ACTION_SEND ||
                         actionId == EditorInfo.IME_ACTION_GO ||
                         actionId == EditorInfo.IME_ACTION_DONE) {

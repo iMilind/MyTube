@@ -14,6 +14,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -34,12 +35,13 @@ public class YouTubeConnector {
         /**
          * https://www.googleapis.com/youtube/v3/search?part=id%2Csnippet&maxResults=1&q=Maroon+5+Sugar&type=video
          */
+        String query = URLEncoder.encode(keywords, "utf-8");
         String searchVideoURL = Constants.BASE_URL+Constants.SEARCH_PATH;
 
         StringBuilder searchVideoURLBuilder = new StringBuilder();
         searchVideoURLBuilder.append(Constants.PART).append("="+"id,snippet");
         searchVideoURLBuilder.append("&").append(Constants.MAX_RESULTS).append("="+NUMBER_OF_VIDEOS_RETURNED);
-        searchVideoURLBuilder.append("&").append(Constants.KEYWORD).append("=").append(keywords);
+        searchVideoURLBuilder.append("&").append(Constants.KEYWORD).append("=").append(query);
         searchVideoURLBuilder.append("&").append(Constants.TYPE).append("=").append("video");
 
         String searchRequestParams = searchVideoURLBuilder.toString();
