@@ -22,7 +22,7 @@
         android:layout_centerVertical="true"
         android:layout_centerHorizontal="true"
         android:minWidth="250sp"
-        android:background="@android:color/holo_blue_dark" />
+        android:background="@android:color/black" />
 
     <ImageView
         android:layout_width="570dp"
@@ -32,5 +32,39 @@
         android:background="@drawable/google"
         android:layout_centerHorizontal="true"
         />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Kandarp Patel"
+        android:id="@+id/textView2"
+        android:textColor="@android:color/black"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_below="@+id/textView3"
+        android:layout_centerHorizontal="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Fareen Magdum"
+        android:id="@+id/textView3"
+        android:textColor="@android:color/black"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_below="@+id/textView4"
+        android:layout_centerHorizontal="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Milind Mahajan"
+        android:id="@+id/textView4"
+        android:textColor="@android:color/black"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_below="@+id/sign_in_button"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="56dp" />
 
 </RelativeLayout>
